@@ -1,223 +1,129 @@
-// El arranque dinámico permite informar errores de carga en el propio panel.
-const $ = (id) => document.getElementById(id);
-let navigation;
-let renderer;
-let statusTimeout;
-
-function showStatus(message) {
-  clearTimeout(statusTimeout);
-  $('status-message').textContent = message;
-  $('status-message').hidden = false;
-  statusTimeout = setTimeout(() => { $('status-message').hidden = true; }, 4500);
+const $ = id => document.getElementById(id);
+let renderer, navigation, fatal = false, statusTimer;
+function showStatus(text) {
+  clearTimeout(statusTimer); $('status-message').textContent = text; $('status-message').hidden = false;
+  statusTimer = setTimeout(() => { $('status-message').hidden = true; }, 3500);
 }
-
 function showError(error) {
-  console.error(error);
-  navigation?.exit();
-  renderer?.setAnimationLoop(null);
-  document.body.classList.remove('ui-hidden');
-  $('loading').hidden = true;
-  $('welcome').hidden = true;
-  $('error-panel').hidden = false;
+  fatal = true; console.error(error); navigation?.exit(); renderer?.setAnimationLoop(null);
+  $('loading').hidden = true; $('welcome').hidden = true; $('dialogue').hidden = true;
+  $('error-panel').hidden = false; document.body.classList.remove('ui-hidden');
   $('error-detail').textContent = location.protocol === 'file:'
-    ? 'Abrí index.html con Live Server desde Visual Studio Code. Los módulos no funcionan al abrir el archivo con doble clic.'
-    : 'No se pudo iniciar la escena. Usá Chrome, Edge o Firefox actualizado con WebGL 2 y aceleración gráfica. Verificá que la carpeta vendor esté completa. Detalle: ' + error.message;
+    ? 'Abrí index.html con Live Server; los módulos necesitan un servidor HTTP.'
+    : 'No se pudo iniciar WebGL. Verificá la consola y los archivos locales. Detalle: ' + error.message;
 }
-
 async function start() {
-  const [THREE, { CONFIG }, { createWorld }, { createNavigation }] = await Promise.all([
-    import('three'), import('./config.js'), import('./world.js'), import('./navigation.js'),
+  const [THREE, { CONFIG }, { createWorld }, { createNavigation }, flowModule, { createWorkflowScene }, { createWorkflowUI }, targets] = await Promise.all([
+    import('three'), import('./config.js'), import('./world.js'), import('./navigation.js'), import('./workflow.js'), import('./workflow-scene.js'), import('./workflow-ui.js'), import('./workflow-targets.js'),
   ]);
-  const [{ createWorkflow }, { createWorkflowUI }, { createWorkflowScene }, { getWorkflowTarget }] = await Promise.all([
-    import('./workflow.js'), import('./workflow-ui.js'), import('./workflow-scene.js'), import('./workflow-targets.js'),
-  ]);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 85);
+  const { createWorkflow, MODES, STEPS } = flowModule;
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 90);
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.domElement.setAttribute('aria-label', 'Vista 3D del local');
-  $('scene').append(renderer.domElement);
-  const world = createWorld(scene);
-  const workflow = createWorkflow();
-  const workflowScene = createWorkflowScene({ scene, world });
-  let workflowUI;
-  let menuOpen = true;
-  let mode = 'walk';
-  let savedPosition;
-  let savedQuaternion;
-  const activeButton = (id, active) => {
-    $(id).classList.toggle('active', active);
-    $(id).setAttribute('aria-pressed', String(active));
-  };
+  renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.graphics.pixelRatio)); renderer.setSize(innerWidth, innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
+  renderer.shadowMap.enabled = CONFIG.graphics.shadows; renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.domElement.setAttribute('aria-label', 'Local 3D'); $('scene').append(renderer.domElement);
+  const world = createWorld(scene), workflow = createWorkflow(), story = createWorkflowScene({ scene, world });
+  let mode = 'walk', receptionOpen = false, savedPosition, savedQuaternion;
   const updateControls = () => {
-    if (navigation.isLocked) {
-      $('help-panel').hidden = true;
-      $('help-button').setAttribute('aria-expanded', 'false');
-    }
-    $('welcome').hidden = menuOpen || workflow.getState().mode !== null || mode === 'overview' || navigation.isLocked;
-    $('crosshair').hidden = menuOpen || mode !== 'walk' || !navigation.isLocked;
-    $('view-label').textContent = mode === 'overview' ? 'Vista general' : navigation.isLocked ? 'Recorrido libre' : 'Recorrido en pausa';
-    activeButton('walk-button', mode === 'walk');
-    activeButton('overview-button', mode === 'overview');
+    if (fatal) return;
+    const locked = navigation.isLocked;
+    document.body.classList.toggle('is-walking', locked);
+    $('welcome').hidden = locked || workflow.getState().mode !== null || receptionOpen || mode === 'overview';
+    $('crosshair').hidden = !locked || mode !== 'walk';
+    $('view-label').textContent = mode === 'overview' ? 'Vista general' : locked ? 'Recorrido libre' : 'En pausa';
+    if (locked) { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); }
   };
-  navigation = createNavigation({
-    camera, domElement: renderer.domElement,
-    colliders: world.colliders, config: CONFIG.navigation,
-    // PointerLockControls emite el evento antes de actualizar isLocked.
-    onLockChange: () => queueMicrotask(updateControls),
-  });
-  const copyPlayer = () => {
-    world.player.position.set(camera.position.x, 0, camera.position.z);
-    world.player.rotation.y = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
-  };
-  function overview() {
-    if (menuOpen) return;
-    if (mode === 'overview') return;
-    savedPosition = camera.position.clone();
-    savedQuaternion = camera.quaternion.clone();
-    copyPlayer();
-    mode = 'overview';
-    navigation.setEnabled(false);
-    world.setOverview(true);
-    camera.fov = 46;
-    camera.position.set(...CONFIG.overview.position);
-    camera.lookAt(...CONFIG.overview.target);
-    camera.updateProjectionMatrix();
-    $('help-panel').hidden = true;
-    $('help-button').setAttribute('aria-expanded', 'false');
-    updateControls();
-    showStatus('Vista general · V vuelve al lugar donde estabas.');
+  navigation = createNavigation({ camera, domElement: renderer.domElement, colliders: world.colliders, config: CONFIG.navigation, onLockChange: () => queueMicrotask(updateControls) });
+  const ui = createWorkflowUI({ world, camera, onSelectMode: selectMode, onAction: interact });
+  const target = () => targets.getWorkflowTarget(workflow.getState(), camera.position, { mode, menuOpen: receptionOpen, assistantReady: story.assistantReady });
+  function closeReception() { receptionOpen = false; ui.setMenuOpen(false); updateControls(); }
+  function openReception() {
+    if (mode !== 'walk' || !targets.nearReception(camera.position)) { showStatus('Acercate al mostrador para hablar con recepción.'); return; }
+    receptionOpen = true; ui.setMenuOpen(true); updateControls();
   }
-  function walk(capture = true) {
-    if (menuOpen) return;
-    if (mode === 'overview') {
-      mode = 'walk';
-      world.setOverview(false);
-      camera.fov = 68;
-      camera.position.copy(savedPosition);
-      camera.quaternion.copy(savedQuaternion);
-      camera.updateProjectionMatrix();
-    }
-    navigation.setEnabled(true);
-    updateControls();
-    if (capture) navigation.enter();
+  function selectMode(id) {
+    if (!receptionOpen || !targets.nearReception(camera.position)) return;
+    if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Esa modalidad está en la oferta, pero su recorrido todavía está en preparación. Probemos el diseño con asistencia.'); return; }
+    workflow.start(id); closeReception();
+    if (!navigation.isLocked) navigation.enter();
   }
-  function reset() {
-    if (menuOpen) return;
-    walk(false);
-    navigation.reset();
-    updateControls();
-    showStatus('Volviste a la entrada. Rodeá el mostrador por la derecha.');
-  }
-  function openMenu() {
-    if (mode === 'overview') walk(false);
-    menuOpen = true;
-    document.body.classList.remove('ui-hidden');
-    navigation.setEnabled(false);
-    $('help-panel').hidden = true;
-    $('help-button').setAttribute('aria-expanded', 'false');
-    workflowUI.setMenuOpen(true);
-    updateControls();
-  }
-  function closeMenu() {
-    menuOpen = false;
-    workflowUI.setMenuOpen(false);
-    navigation.setEnabled(true);
-    updateControls();
-  }
-  function targetStatus(state = workflow.getState()) {
-    return getWorkflowTarget(state, camera.position, { mode, menuOpen });
-  }
-  function advanceWorkflow() {
-    const state = workflow.getState();
-    if (menuOpen || mode !== 'walk' || state.complete) return;
-    if (state.mode === null) {
-      if (targetStatus(state).nearTarget) openMenu();
+  function interact() {
+    if (mode !== 'walk') return;
+    if (receptionOpen) {
+      const paper = world.paperAtAim(camera);
+      if (paper) selectMode(paper); else ui.say('receptionist', 'Elegí una de las fichas del mostrador: 1 con asistencia, 2 por tu cuenta o 3 por encargo.');
       return;
     }
-    const target = targetStatus(state);
-    if (!target.nearTarget) { showStatus(`Acercate a ${target.targetLabel} para continuar.`); return; }
+    const state = workflow.getState();
+    if (!state.mode || state.complete) { openReception(); return; }
+    const destination = target();
+    if (!destination.nearTarget) {
+      if (destination.waiting) ui.say('technician', 'Voy hacia E1. Si estoy en el paso, dejame un lugar para acercarme.');
+      return;
+    }
+    if (state.stepId === 'call-assistant') ui.say('client', STEPS[state.stepIndex].dialogue);
     workflow.advance();
   }
-  function startAssisted(modeId) {
-    if (!workflow.start(modeId)) return;
-    closeMenu();
-    navigation.reset();
-    walk();
-  }
-  workflowUI = createWorkflowUI({
-    onSelectMode: startAssisted,
-    onExplore: () => { workflow.reset(); closeMenu(); walk(); },
-    onAction: advanceWorkflow,
-    onRestart: () => { workflow.start('assisted'); reset(); walk(); },
-    onDismiss: () => { workflow.reset(); walk(); },
-  });
-  workflow.subscribe(state => {
-    workflowScene.applyState(state);
-    workflowUI.render(state, targetStatus(state));
-    updateControls();
-    if (state.complete) showStatus('Preparación lista. La revisión técnica y la impresión se suman en el siguiente hito.');
-  });
-  workflowScene.applyState(workflow.getState());
-  workflowUI.setMenuOpen(true);
-  workflowUI.render(workflow.getState(), targetStatus());
-  $('enter-button').addEventListener('click', () => walk());
-  $('walk-button').addEventListener('click', () => walk());
-  $('overview-button').addEventListener('click', overview);
-  $('reset-button').addEventListener('click', reset);
-  $('service-button').addEventListener('click', openMenu);
-  $('help-button').addEventListener('click', () => {
-    $('help-panel').hidden = !$('help-panel').hidden;
-    $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden));
-  });
-  renderer.domElement.addEventListener('click', () => { if (mode === 'walk' && !menuOpen) navigation.enter(); });
-  renderer.domElement.addEventListener('navigationerror', event => showStatus(event.detail.message));
-  renderer.domElement.addEventListener('webglcontextlost', event => {
-    event.preventDefault();
-    showError(new Error('Se perdió el contexto gráfico; volvé a intentar.'));
-  });
-  window.addEventListener('keydown', event => {
-    if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
-    if (event.code === 'KeyE') { event.preventDefault(); advanceWorkflow(); }
-    if (event.code === 'KeyV') {
-      event.preventDefault();
-      if (mode === 'overview') walk(); else overview();
+  function walk(capture = true) {
+    if (mode === 'overview') {
+      mode = 'walk'; world.setOverview(false); camera.position.copy(savedPosition); camera.quaternion.copy(savedQuaternion); camera.fov = 68; camera.updateProjectionMatrix();
     }
-    if (event.code === 'KeyR') { event.preventDefault(); reset(); }
+    navigation.setEnabled(true); updateControls(); if (capture) navigation.enter();
+  }
+  function overview() {
+    if (mode === 'overview') { walk(); return; }
+    closeReception(); savedPosition = camera.position.clone(); savedQuaternion = camera.quaternion.clone();
+    world.player.position.set(camera.position.x, 0, camera.position.z); world.player.rotation.y = camera.rotation.y;
+    mode = 'overview'; navigation.setEnabled(false); world.setOverview(true);
+    camera.position.set(...CONFIG.overview.position); camera.lookAt(...CONFIG.overview.target); camera.fov = 46; camera.updateProjectionMatrix(); updateControls();
+  }
+  function resetCamera() { walk(false); closeReception(); navigation.reset(); updateControls(); }
+  function restart() { workflow.reset(); story.reset(); resetCamera(); showStatus('Toma reiniciada. Acercate a recepción y presioná E.'); }
+  workflow.subscribe(state => { story.applyState(state); updateControls(); });
+  story.applyState(workflow.getState());
+  $('enter-button').addEventListener('click', () => walk()); $('walk-button').addEventListener('click', () => walk());
+  $('overview-button').addEventListener('click', overview); $('reset-button').addEventListener('click', resetCamera); $('restart-button').addEventListener('click', restart);
+  $('help-button').addEventListener('click', () => { $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); });
+  renderer.domElement.addEventListener('click', () => { if (mode === 'walk' && !navigation.isLocked) walk(); });
+  renderer.domElement.addEventListener('navigationerror', event => showStatus(event.detail.message));
+  renderer.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); showError(new Error('Se perdió el contexto gráfico; recargá la página.')); });
+  window.addEventListener('keydown', event => {
+    if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
+    const number = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(event.code);
+    if (number >= 0 && receptionOpen) { event.preventDefault(); selectMode(MODES[number % 3].id); }
+    if (event.code === 'KeyE') { event.preventDefault(); interact(); }
+    if (event.code === 'KeyV') { event.preventDefault(); overview(); }
+    if (event.code === 'KeyR') { event.preventDefault(); resetCamera(); }
     if (event.code === 'KeyH') { event.preventDefault(); document.body.classList.toggle('ui-hidden'); }
+    if (event.code === 'F2') { event.preventDefault(); $('performance-panel').hidden = !$('performance-panel').hidden; }
   });
-  window.addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-    renderer.setSize(innerWidth, innerHeight);
-  });
-  let previousTime;
-  let previousZone;
+  window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.graphics.pixelRatio)); renderer.setSize(innerWidth, innerHeight); });
+  let previousTime, sampleTime, sampleFrames = 0, lastZone;
   renderer.setAnimationLoop(time => {
-    const dt = previousTime === undefined ? 0 : Math.min((time - previousTime) / 1000, 0.05);
-    previousTime = time;
+    const dt = previousTime === undefined ? 0 : Math.min((time - previousTime) / 1000, 0.05); previousTime = time;
     navigation.update(dt);
-    workflowScene.update(dt);
+    if (!document.hidden) workflow.tick(dt);
     const state = workflow.getState();
-    const target = targetStatus(state);
-    workflowUI.render(state, target);
-    workflowUI.setHint(target.nearTarget && !state.complete
-      ? state.mode === null ? 'E · Consultar modalidades en recepción' : 'E · Continuar el recorrido'
-      : null);
-    const zone = mode === 'overview' ? '3 estaciones · 1 acceso' : world.getZone(camera.position);
-    if (zone !== previousZone) { $('zone-label').textContent = zone; previousZone = zone; }
+    story.update(dt, state, mode === 'walk' ? camera.position : savedPosition);
+    if (receptionOpen && !targets.nearReception(camera.position)) closeReception();
+    const destination = target(), step = STEPS[state.stepIndex];
+    ui.render(state, destination, { dt, mode, locked: navigation.isLocked });
+    const hint = mode !== 'walk' ? null : receptionOpen ? 'Elegí una ficha · 1 / 2 / 3 · o mirala y E'
+      : (!state.mode || state.complete) && targets.nearReception(camera.position) ? 'E · Hablar con recepción'
+        : destination.waiting ? 'El técnico viene hacia E1'
+          : destination.nearTarget && step?.action ? 'E · ' + step.action
+            : step?.automatic ? step.title + ' · ' + Math.round(state.progress * 100) + '%' : null;
+    ui.setHint(hint);
+    const zone = mode === 'overview' ? 'Distribución del taller' : world.getZone(camera.position);
+    if (zone !== lastZone) { $('zone-label').textContent = zone; lastZone = zone; }
     renderer.render(scene, camera);
+    sampleTime ??= time; sampleFrames += 1;
+    if (time - sampleTime >= 1000) {
+      if (!$('performance-panel').hidden) $('performance-panel').textContent = Math.round(sampleFrames * 1000 / (time - sampleTime)) + ' FPS · ' + (renderer.info?.render.calls ?? 0) + ' dibujos · ' + (renderer.info?.render.triangles ?? 0).toLocaleString('es-AR') + ' triángulos';
+      sampleFrames = 0; sampleTime = time;
+    }
   });
-  updateControls();
-  $('loading').hidden = true;
+  updateControls(); $('loading').hidden = true;
 }
-
 start().catch(showError);

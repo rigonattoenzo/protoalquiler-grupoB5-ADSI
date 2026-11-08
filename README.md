@@ -1,166 +1,132 @@
 # ProtoAlquiler 3D
 
-Simulación del local para que el equipo pueda preparar y grabar el video del TP de Administración de Sistemas de Información, UTN FRC. Implementada con **Three.js, HTML, CSS y JavaScript**, sin framework ni compilación.
+Simulación interna del local para grabar la entrega de Administración de Sistemas de Información, UTN FRC. Three.js, HTML, CSS y JavaScript; sin framework, compilación ni servicios externos.
 
-## Hito 1 — Local navegable
+## Abrir
 
-Esta entrega sigue el pedido de avanzar por hitos. Incluye:
+En Visual Studio Code, abrí esta carpeta y ejecutá **Open with Live Server** sobre `index.html`, o **Go Live**. No abras el archivo con doble clic: los módulos necesitan HTTP.
 
-- Un local con un único acceso frontal, recepción y paso por la derecha del mostrador.
-- Tres estaciones amplias reutilizadas, cada una con computadora, superficie de trabajo, impresora sencilla y silla.
-- Armario con frentes transparentes y bobinas, técnico, depósito y dos baños individuales identificados. Las tres habitaciones forman un bloque continuo contra la pared izquierda, sin huecos entre ellas y hasta el techo. Sus interiores están bloqueados.
-- Vidriera con dos piezas de ejemplo.
-- Cliente en primera persona, WASD, mouse, aceleración/frenado y colisiones con paredes, mobiliario y técnico.
-- Mirada con filtro de picos del mouse, límite de velocidad de giro y suavizado por tiempo transcurrido. Al capturar o retomar el mouse se descarta el primer desplazamiento para evitar un salto de recentrado.
-- Apoyo sobre el piso mediante gravedad simple. No hay salto, escaleras ni objetos físicos dinámicos.
-- Vista general sin techo ni paredes frontal/derecha, con el muñequito del cliente en su posición, además del técnico.
-- Reinicio de cámara, ayuda y controles que se pueden ocultar para grabar.
+Three.js **0.187.0** y los controles están incluidos en `vendor/`; no hace falta `npm install` ni Internet para ejecutar. Navegador actualizado con WebGL 2.
 
-Los muebles son primitivas de colores planos. Los carteles se dibujan localmente en canvas. No se usan modelos ni texturas externas.
-
-## Hito 2 — Inicio del recorrido asistido
-
-El menú inicial muestra las tres modalidades del proyecto. **Diseño con asistencia** está disponible; diseño autónomo y encargo se identifican como próximos recorridos.
-
-El tutorial implementado llega desde recepción hasta dejar el trabajo preparado:
-
-1. Elegir **Necesito ayuda para diseñar e imprimir**.
-2. En recepción, presentar la referencia precargada: un soporte para celular.
-3. Rodear el mostrador por su derecha y acercarse a la computadora de E1, señalada con un marcador verde.
-4. Abrir la computadora y seguir los dos pasos guiados: crear la base y agregar el apoyo. El modelo aparece progresivamente sobre la mesa.
-5. Revisar las estimaciones simuladas de material y uso, y preparar el trabajo.
-6. Llegar a **Preparación lista**. Esta es la última etapa habilitada en esta iteración.
-
-Usá **E** para interactuar cerca del lugar indicado. También podés liberar el mouse con **Esc** y usar el botón del tutorial. La guía permanece visible mientras explorás y no obliga a seguir un camino físico único.
-
-**Todavía faltan revisión técnica, presupuesto, confirmación del material, suministro de bobina, impresión acelerada y cierre.** La pieza sobre la mesa representa el modelo de demostración: no hay una pieza impresa en la cama de la máquina. Caminar no avanza pasos ni modifica consumos.
-
-El técnico adopta una posición preparada junto a E1 al comenzar el diseño y orienta mediante textos guionados. Su desplazamiento animado queda para otra iteración.
-
-Para repetir, usá **Reiniciar tutorial**: restaura referencia, modelo, técnico y posición de entrada. **Explorar sin guía** cancela el tutorial y vuelve a la exploración. El botón superior **Recepción** permite volver al menú de modalidades; al seleccionar de nuevo el asistido se prepara una toma nueva desde la entrada.
-
-## Abrir con Live Server
-
-1. Abrí esta carpeta completa en Visual Studio Code.
-2. Instalá **Live Server**, de Ritwick Dey, si todavía no lo tenés.
-3. Clic derecho sobre `index.html` → **Open with Live Server**, o usá **Go Live**.
-4. Abrí la dirección que indique la extensión en Chrome, Edge o Firefox actualizado, con WebGL 2 y aceleración gráfica.
-5. Pulsá **Recorrer el local**. El navegador captura el mouse; `Esc` lo libera.
-
-No abras `index.html` con doble clic (`file://`): los módulos necesitan un servidor HTTP. **No hace falta `npm install` ni conexión a Internet para ejecutar la demo**: Three.js y los controles están incluidos en `vendor/`.
-
-Alternativa si ya tenés Node.js 20 o posterior:
+También existe un servidor opcional para Node.js 20 o posterior:
 
 ```sh
 npm start
 ```
 
-Abrí la dirección que imprime la consola (normalmente `http://127.0.0.1:5500`). Si ese puerto está ocupado, prueba hasta el 5510. Este servidor opcional solo escucha en tu computadora; se detiene con `Ctrl+C`. Live Server sigue siendo la forma principal y agrega recarga automática.
+La consola imprime su dirección (habitualmente `http://127.0.0.1:5500`). Live Server sigue siendo la opción principal, con recarga automática.
+
+## Recorrido asistido completo
+
+1. Pulsá **Entrar al local**, caminá un poco hacia el mostrador y presioná **E**. Las opciones se ofrecen al conversar con recepción, no al cargar la aplicación.
+2. La recepcionista presenta las tarifas ilustrativas y las tres fichas del mostrador. Elegí **1: Con asistencia**, o mirá esa ficha y tocá E. Con Esc también podés usar los botones del globo.
+3. Presentá la referencia del soporte para celular. Seguí la marca verde hasta E1 y usá la computadora.
+4. Llamá al técnico con E. Dejá libre el paso mientras se acerca: después permanece junto al puesto durante el trabajo.
+5. Creá la base. El diseño aparece en la pantalla de la computadora. El técnico revisa la preparación y presenta el presupuesto del ejemplo.
+6. Confirmá el presupuesto y solicitá la carga de material. La impresora mueve el cabezal y construye la base en una animación acelerada.
+7. Llevá la base terminada a la mesa con E. Diseñá el respaldo en pantalla, validá la segunda pieza e imprimila.
+8. Trasladá el respaldo y observá el ensamblado sobre la mesa.
+9. Mirá el resultado y volvé al mostrador para cerrar la sesión de ejemplo. El desglose no se acumula al repetir acciones.
+
+Los personajes hablan mediante globos anclados a su posición. Si el hablante queda fuera del encuadre, el globo se ubica en el borde para mantenerlo legible. La guía persistente ocupa una sola línea; las instrucciones principales están en los diálogos y en la escena.
+
+**Solo está implementado el recorrido con asistencia.** Diseño autónomo y encargo aparecen en las fichas con “Próximamente”. Sus flujos no se presentan como terminados.
 
 ## Controles
 
 | Control | Acción |
 | --- | --- |
-| WASD o flechas | Caminar en la dirección de la cámara |
-| Mouse | Mirar, después de pulsar Recorrer |
-| Esc | Liberar el mouse y pausar el movimiento |
-| V | Alternar vista general y recorrido; conserva la posición |
-| R | Volver a la entrada y mirar hacia recepción |
-| E | Consultar recepción o ejecutar el paso de tutorial cerca de su destino |
-| H | Ocultar o mostrar la interfaz |
-| Botones superiores | Recorrer, vista general, entrada y ayuda |
+| WASD o flechas + mouse | Caminar y mirar |
+| E | Hablar o ejecutar la acción cerca del objetivo |
+| 1 / 2 / 3 | Elegir una ficha al conversar con recepción |
+| Esc | Liberar el mouse y mostrar controles |
+| V | Alternar vista general y primera persona |
+| R | Restaurar la cámara de entrada; conserva el proceso |
+| H | Ocultar controles para grabar; conserva los globos de diálogo |
+| F2 | Mostrar diagnóstico de FPS y llamadas de dibujo |
+| Reiniciar historia | Restaurar proceso, piezas, impresiones y datos del ejemplo |
 
-Desde la entrada, rodeá el mostrador **por su derecha** para acceder al pasillo y a E1, E2 y E3. El pequeño umbral del acceso permite salir un paso; el exterior completo queda fuera de este hito.
+Las impresiones y el ensamblado avanzan por su animación; E no permite saltarlos ni duplicarlos. Al alejarse del mostrador se cierra la elección de fichas. La circulación permanece libre durante el tutorial.
 
-El cliente está representado por la cámara al caminar y por una figura azul en la vista general. El técnico es la figura verde. Los dos están construidos con primitivas. **R** solo reinicia la cámara; no reinicia el proceso. Para eso está **Reiniciar tutorial**.
+## Local y personajes
 
-Para una toma limpia: entrá al recorrido y pulsá `H`. Pulsá `H` otra vez para recuperar la interfaz. Al volver de la vista general, el navegador puede requerir un nuevo clic en **Recorrer** para capturar el mouse.
+- Acceso único, recepción frontal con espacio útil de personal y una recepcionista separada del técnico.
+- Tres estaciones contra la pared derecha, la última junto al fondo. Separación mayor entre puestos y menos espacio vacío hacia la vidriera.
+- Depósito y dos baños continuos, del piso al techo. Interiores fuera del recorrido.
+- Armario de vidrio contra el fondo, entre depósito y E3, con espacio junto a la puerta del depósito.
+- Sillas de oficina con brazos, columna, base de cinco radios y ruedas. Son estáticas.
+- Una persona trabaja sentada en E2. Es parte del caso ilustrativo, no una medición de ocupación.
+- El técnico recorre puntos de paso mientras no está solicitado. Al llamarlo va a E1 por el pasillo, respeta colisiones y se queda hasta terminar el trabajo.
+- Seis figuras en la vidriera, logo elevado y tarifario en la pared derecha sobre E2.
+- Paleta de marfil, madera clara, arcilla suave y salvia. Geometrías simples y carteles/pantallas generados localmente.
 
-## Organización
+Las proporciones son unidades visuales para la demo, no medidas arquitectónicas reales. El plano original es conceptual; esta revisión incorpora los cambios de distribución solicitados por el grupo.
+
+## Datos de demostración
+
+`DEMO` en `src/workflow.js` centraliza pieza, material, gramos, tiempos y tarifas:
+
+| Dato ilustrativo | Valor |
+| --- | --- |
+| Pieza | Soporte para celular, base y respaldo encastrados |
+| Material | PLA verde salvia |
+| Consumo total, incluidos auxiliares | 25 g: base 12 g + respaldo 13 g |
+| Tiempo representado de estación | 90 minutos |
+| Tarifa ficticia de estación | $6000/hora |
+| Material ficticio | $100/g |
+| Uso / material / total | $9000 / $2500 / **$11500** |
+| Cada impresión visual / ensamblado | 7 s / 2,5 s |
+
+Fórmula: `tarifa_horaria × minutos / 60 + precio_por_gramo × gramos`. La segunda impresión ya está contemplada en ese total. El tiempo de caminar y grabar no se factura ni altera las cifras. Computadora, impresora y asistencia **básica** se representan incluidas; no se establece una política comercial de modelado intensivo ilimitado.
+
+Los importes son ficticios y las estimaciones están precargadas. La pantalla simula CAD/laminado y las impresoras simulan fabricación; no se conectan a equipos reales. El cierre es una demostración, sin pagos ni facturación real.
+
+## Rendimiento
+
+Se consultaron los ejemplos de la materia, incluido 6.2 de rendimiento. La escena reutiliza materiales y geometrías, agrupa mobiliario estático con `InstancedMesh`, calcula sus colisiones una vez y mantiene animaciones por tiempo transcurrido. El mobiliario agrupado conserva objetos lógicos para límites y pruebas.
+
+`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. Las juntas del piso se dibujan en un único grupo de líneas. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
+
+Con **F2** se pueden comparar FPS y costo de dibujo en la computadora de grabación. Todavía hay que comprobar el rendimiento real con el grabador abierto; las pruebas de Node no miden la GPU ni garantizan FPS.
+
+## Código y comprobaciones
 
 ```text
-index.html                 Interfaz e import map local
-styles.css                 Paneles y controles sobre la escena
-src/
-  main.js                  Arranque, render, interfaz y vistas
-  config.js                Colores, proporciones, estaciones y navegación
-  world.js                 Local, muebles, luces y colisionadores estáticos
-  character.js             Personajes construidos con primitivas
-  navigation.js            WASD, Pointer Lock y movimiento de cámara
-  look.js                  Filtro y actualización suave de la mirada
-  physics.js               Colisión círculo/AABB y apoyo sobre el piso
-  workflow.js              Modalidades, etapas, estado y datos de demostración
-  workflow-targets.js      Destinos y condiciones de proximidad
-  workflow-ui.js           Menú y guía del recorrido asistido
-  workflow-scene.js        Pieza progresiva, destino y técnico en E1
-scripts/
-  serve.mjs                Servidor local opcional sin dependencias
-  check.mjs                Comprobación de sintaxis y archivos
-tests/                     Pruebas de física y distribución
-vendor/three/              Three.js r187 y controles, con licencia MIT
-docs/                      Referencias y registro de validación
+src/config.js             Distribución, colores, navegación y calidad gráfica
+src/world.js              Local, muebles, recepción, fichas y personajes
+src/character.js          Personas con primitivas; variante sentada
+src/navigation.js         WASD y captura del mouse
+src/look.js               Filtro de mirada contra giros bruscos
+src/physics.js            Colisiones y apoyo sobre el piso
+src/workflow.js           Guion, tiempos visuales y presupuesto repetible
+src/workflow-targets.js   Proximidad y condiciones de interacción
+src/workflow-scene.js     Técnico, impresión, traslado y ensamblado
+src/monitor.js            Pantalla de CAD/slicer simulada
+src/workflow-ui.js        Globos de diálogo, opciones y objetivo discreto
+src/main.js               Coordinación, render, controles y diagnóstico
+tests/                    Pruebas de física, flujo e integración sin GPU
+vendor/three/             Dependencia oficial local con licencia MIT
+docs/                     Contexto de validación y puntos de continuación
 ```
-
-Las proporciones de `src/config.js` y `src/world.js` son unidades de escena elegidas para el recorrido. **No son medidas arquitectónicas reales ni una declaración de superficie**. Se siguió el plano conceptual de tres estaciones, acceso único y recepción frontal. Se consultó completo el documento recibido `Contexto_Codex_ProtoAlquiler_3D.md`; el nombre `Contexto_Codex_Prototipo.md` mencionado en el pedido no estaba presente.
-
-`DEMO` en `src/workflow.js` reúne la pieza, material, color, gramos y minutos del caso: soporte para celular, PLA verde, **25 g incluidos auxiliares** y **90 minutos de uso representado**. Son datos ilustrativos precargados: no se calculan con CAD, laminador ni tiempo real del paseo. En esta iteración no se calculan ni cobran importes.
-
-Para simplificar este hito, las cajas de colisión se calculan una sola vez a partir de los volúmenes sólidos. El jugador es un círculo en XZ con altura de cámara fija; usa subpasos para evitar atravesar paredes y se desliza al tocar un obstáculo. La vista general cambia la cámara y la visibilidad de paredes; no cambia las colisiones del recorrido.
-
-El material de la materia se consultó como referencia, sin copiar sus ejercicios ni modelos. Ver [material de referencia](docs/material-de-referencia.md). Three.js está fijado en **0.187.0**, con núcleo y controles de la misma versión; ver [origen y licencia](vendor/three/README.md).
-
-## Comprobaciones
-
-Con Node.js 20 o posterior, sin instalar paquetes:
 
 ```sh
 npm run check
 npm test
 ```
 
-Las pruebas verifican física, distribución y controles de cámara; no reemplazan una prueba visual. El detalle de lo comprobado y la limitación del acceso al navegador están en [validación del hito](docs/validacion-hito-1.md).
+Las pruebas cubren secuencia completa, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, técnico y colisiones, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Para cerrar la revisión visual en tu computadora:
+Ver [estado de la iteración actual](docs/estado-hito-3.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
-1. Comprobá que desaparece la carga y ves recepción al abrir.
-2. Pulsá Recorrer, mirá con el mouse y caminá contra el mostrador: debe detenerte.
-3. Rodealo por la derecha y acercate a las tres estaciones; mesas y sillas deben bloquear el paso.
-4. Probá paredes, armario, puertas de baños y depósito: no deben atravesarse.
-5. Probá `Esc`, volver a Recorrer, `V`, `R` y `H`.
-6. Comprobá luz, carteles y fluidez con tu grabador abierto antes de producir el video.
+## GitHub y próximos pasos
 
-## Hitos siguientes
-
-Pendiente de refinamiento: ajustar la sensibilidad de la mirada según la preferencia del equipo. El usuario confirmó las correcciones de habitaciones y giros bruscos, y pidió posponer ese ajuste fino.
-
-1. **Revisión e impresión:** revisión del técnico, presupuesto ilustrativo, confirmación del material, suministro de bobina, impresión acelerada y resumen repetible.
-2. **Reutilización y grabación:** modalidad autónoma y encargo, salto de escenas y cámaras preparadas.
-
-Las futuras tarifas también serán ilustrativas y configurables. El tutorial actual no introduce precios comerciales ni modifica las decisiones del emprendimiento.
-
-## Subir a GitHub por primera vez
-
-El repositorio Git local ya existía. `git init` crea la carpeta oculta `.git`; no crea un repositorio en GitHub ni un archivo `.init`.
-
-Cuando esté listo el primer commit local:
-
-1. En GitHub, creá un repositorio vacío, por ejemplo `protoalquiler-grupoB5-ADSI`, con la visibilidad que el equipo prefiera.
-2. **No agregues README, .gitignore ni licencia desde GitHub**, porque esta carpeta ya contiene los archivos del proyecto.
-3. Copiá su URL HTTPS y ejecutá desde esta carpeta, reemplazando `TU_USUARIO` y el nombre si corresponde:
+El repositorio local usa `main`. Cuando se cree el remoto en GitHub, debe estar vacío, sin README, .gitignore ni licencia adicionales. Después:
 
 ```sh
 git remote add origin https://github.com/TU_USUARIO/protoalquiler-grupoB5-ADSI.git
 git push -u origin main
 ```
 
-Git puede pedirte iniciar sesión en GitHub. También podés pasarme la URL cuando lo crees para conectar el remoto y hacer el primer push. El ZIP de la materia y `.reference/` están excluidos por `.gitignore`.
+El material docente en `.reference/` y los ZIP están excluidos de Git. No se publicó la aplicación ni se creó un remoto.
 
-Para cambios posteriores:
-
-```sh
-git add .
-git commit -m "Describe el cambio realizado"
-git push
-```
-
-Subir el código a GitHub no publica automáticamente una web. El hosting queda para otro momento.
+Próximos pasos: revisar las tomas y ajustar detalles de encuadre/sensibilidad, implementar autónomo y encargo reutilizando el escenario, y agregar cámaras preparadas para grabación. No se requiere CAD real, backend, cuentas, reservas, inventario comercial ni pagos.

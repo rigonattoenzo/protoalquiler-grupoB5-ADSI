@@ -1,9 +1,9 @@
 {
   "name": "protoalquiler-3d",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Simulación interna de ProtoAlquiler 3D — hito 1: espacio y navegación.",
+  "description": "Simulación de ProtoAlquiler 3D: diálogos, diseño asistido, impresión y ensamblado.",
   "scripts": {
     "start": "node scripts/serve.mjs",
     "test": "node --test",

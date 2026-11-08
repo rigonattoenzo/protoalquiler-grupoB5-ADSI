@@ -1,152 +1,72 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { worldFixture, THREE } from './helpers.mjs';
 import { CONFIG } from '../src/config.js';
 import { moveCircle, overlapsCircle } from '../src/physics.js';
+const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, a + ' != ' + b);
 
-// Node no interpreta import maps. Cargamos los mismos módulos locales con sus
-// URL resueltas, sin instalar otra copia de Three.js ni requerir WebGL.
-const threeUrl = new URL('../vendor/three/three.module.js', import.meta.url);
-const THREE = await import(threeUrl.href);
-const moduleDataUrl = (source) => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
-const characterSource = (await readFile(new URL('../src/character.js', import.meta.url), 'utf8'))
-  .replace("from 'three'", `from ${JSON.stringify(threeUrl.href)}`);
-const worldSource = (await readFile(new URL('../src/world.js', import.meta.url), 'utf8'))
-  .replace("from 'three'", `from ${JSON.stringify(threeUrl.href)}`)
-  .replace("from './config.js'", `from ${JSON.stringify(new URL('../src/config.js', import.meta.url).href)}`)
-  .replace("from './character.js'", `from ${JSON.stringify(moduleDataUrl(characterSource))}`);
-const { createWorld } = await import(moduleDataUrl(worldSource));
-
-const previousDocument = globalThis.document;
-globalThis.document = {
-  createElement(tag) {
-    assert.equal(tag, 'canvas');
-    return { width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) };
-  },
-};
-const scene = new THREE.Scene();
-let world;
-try {
-  world = createWorld(scene);
-} finally {
-  if (previousDocument === undefined) delete globalThis.document;
-  else globalThis.document = previousDocument;
-}
-
-const radius = CONFIG.navigation.radius;
-const clear = (position) => world.colliders.every((box) => !overlapsCircle(position, radius, box));
-const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} ≠ ${expected}`);
-const goTo = (position, target) => moveCircle(position, {
-  x: target.x - position.x,
-  z: target.z - position.z,
-}, radius, world.colliders);
-
-test('el spawn real está dentro del local y libre de obstáculos', () => {
-  assert.ok(clear(CONFIG.navigation.spawn));
-  assert.ok(Math.abs(CONFIG.navigation.spawn.x) < CONFIG.room.width / 2);
-  assert.ok(Math.abs(CONFIG.navigation.spawn.z) < CONFIG.room.depth / 2);
-});
-
-test('hay exactamente tres mesas con computadora, impresora y silla', () => {
-  const tables = world.colliders.filter(({ id }) => id.startsWith('Mesa '));
-  assert.deepEqual(tables.map(({ id }) => id).sort(), ['Mesa E1', 'Mesa E2', 'Mesa E3']);
-  for (const { id } of CONFIG.stations) {
-    assert.ok(scene.getObjectByName(`Monitor ${id}`));
-    assert.ok(scene.getObjectByName(`Base impresora ${id}`));
-    assert.ok(scene.getObjectByName(`Silla ${id}`));
+test('entrada única, recepción accesible y espacio justo para el personal', async () => {
+  const { world } = await worldFixture(), { reception, room, navigation } = CONFIG;
+  assert.ok(world.colliders.every(box => !overlapsCircle(navigation.spawn, navigation.radius, box)));
+  const desk = world.colliders.find(box => box.id === 'Mostrador recepción');
+  const bathroom = world.colliders.find(box => box.id === 'BAÑO MUJERES');
+  const clearance = desk.minZ - bathroom.maxZ;
+  assert.ok(clearance >= 1.1 && clearance <= 1.3);
+  assert.ok(reception.staffZ - 0.3 > bathroom.maxZ && reception.staffZ + 0.3 < desk.minZ);
+  for (const x of [-7, -4.7, -2.7, 0, 6]) {
+    const end = moveCircle({ x, z: room.front - 0.5 }, { x: 0, z: 2 }, navigation.radius, world.colliders);
+    assert.equal(end.z > room.front + 0.3, x === -4.7);
   }
 });
-
-test('los dos baños y el depósito están identificados y bloquean el acceso a su interior', () => {
-  const names = ['DEPÓSITO', 'BAÑO HOMBRES', 'BAÑO MUJERES'];
-  assert.equal(world.colliders.filter(({ id }) => names.includes(id)).length, 3);
-  for (const name of names) {
-    const room = world.colliders.find(({ id }) => id === name);
-    assert.ok(scene.getObjectByName(`Puerta ${name}`));
-    const z = (room.minZ + room.maxZ) / 2;
-    const stopped = goTo({ x: -3.2, z }, { x: -7, z });
-    near(stopped.x, room.maxX + radius);
-    assert.ok(clear(stopped));
-  }
-});
-
-test('baños y depósito forman un bloque continuo del piso al techo contra la pared izquierda', () => {
-  const names = ['DEPÓSITO', 'BAÑO HOMBRES', 'BAÑO MUJERES'];
-  const bounds = names.map(name => new THREE.Box3().setFromObject(scene.getObjectByName(name)));
+test('habitaciones continuas hasta el techo, sin huecos entre ellas', async () => {
+  const { scene } = await worldFixture();
+  const rooms = ['DEPÓSITO', 'BAÑO HOMBRES', 'BAÑO MUJERES'].map(name => new THREE.Box3().setFromObject(scene.getObjectByName(name)));
   const ceiling = new THREE.Box3().setFromObject(scene.getObjectByName('Techo'));
-  for (const room of bounds) {
-    near(room.min.y, 0);
-    near(room.max.y, ceiling.min.y);
-    near(room.min.x, -CONFIG.room.width / 2);
-    near(room.max.x, bounds[0].max.x);
-  }
-  near(bounds[0].min.z, -CONFIG.room.depth / 2);
-  near(bounds[0].max.z, bounds[1].min.z);
-  near(bounds[1].max.z, bounds[2].min.z);
-  // También se cierran los antiguos huecos en el volumen de colisión.
-  for (const z of [-2.98, -0.02]) {
-    const stopped = goTo({ x: -3.2, z }, { x: -7, z });
-    near(stopped.x, bounds[0].max.x + radius);
-    assert.ok(clear(stopped));
-  }
+  rooms.forEach(room => { near(room.min.y, 0); near(room.max.y, ceiling.min.y); near(room.min.x, CONFIG.room.left); });
+  near(rooms[0].max.z, rooms[1].min.z); near(rooms[1].max.z, rooms[2].min.z);
 });
-
-test('el único acceso frontal permite pisar el umbral, con límites a sus lados y al frente', () => {
-  const passage = [];
-  for (const x of [-7.5, -6.5, -5.3, -4.7, -4.1, -3, -1, 0, 1, 7.5]) {
-    const end = goTo({ x, z: 4.8 }, { x, z: 6.5 });
-    if (end.z > 6.3) passage.push(x);
-  }
-  assert.deepEqual(passage, [-5.3, -4.7, -4.1]);
-  const threshold = goTo(CONFIG.navigation.spawn, { x: -4.7, z: 10 });
-  near(threshold.z, 7.02 - radius);
-  assert.ok(clear(threshold));
-  const left = goTo(threshold, { x: -8, z: threshold.z });
-  const right = goTo(threshold, { x: 2, z: threshold.z });
-  near(left.x, -5.9 + radius);
-  near(right.x, -3.5 - radius);
+test('puestos junto a la pared, separación ampliada y armario junto al fondo', async () => {
+  const { scene, world } = await worldFixture();
+  const wall = world.colliders.find(box => box.id === 'Pared derecha');
+  CONFIG.stations.forEach(({ id }) => {
+    const table = world.colliders.find(box => box.id === 'Mesa ' + id);
+    near(table.maxX, wall.minX);
+    assert.ok(scene.getObjectByName('Monitor ' + id));
+    assert.ok(scene.getObjectByName('Silla ' + id).children.length >= 15);
+  });
+  assert.ok(CONFIG.stations[0].z - CONFIG.stations[1].z >= 3.5);
+  const cabinet = world.colliders.find(box => box.id === 'Armario de filamentos');
+  near(cabinet.minZ, CONFIG.room.back + 0.025);
+  assert.ok(cabinet.minX - (-4.075) > 1.5, 'Deja libre la puerta del depósito');
 });
-
-test('se puede rodear recepción por la derecha y llegar a las tres estaciones', () => {
+test('personas separadas, seis figuras y tres fichas físicas sobre el mostrador', async () => {
+  const { world, scene } = await worldFixture();
+  assert.notEqual(world.receptionist, world.technician);
+  assert.ok(scene.getObjectByName('Cliente trabajando'));
+  assert.equal(scene.children.filter(object => object.name.startsWith('Muestra vidriera')).length, 6);
+  assert.deepEqual(world.papers.map(object => object.userData.mode), ['assisted', 'autonomous', 'order']);
+});
+test('la agrupación gráfica conserva pantallas y cabezales animables y paredes de corte independientes', async () => {
+  const { world, scene } = await worldFixture();
+  const batches = scene.children.filter(item => item.isInstancedMesh);
+  assert.ok(batches.reduce((sum, item) => sum + item.count, 0) > 100);
+  for (const [id, printer] of world.printers) {
+    for (const item of [printer.head, world.screens.get(id)]) {
+      for (let ancestor = item; ancestor && ancestor !== scene; ancestor = ancestor.parent) assert.equal(ancestor.visible, true, item.name + ' no debe quedar congelado en un grupo estático');
+    }
+  }
+  world.setOverview(true); assert.equal(scene.getObjectByName('Pared derecha').visible, false);
+  world.setOverview(false); assert.equal(scene.getObjectByName('Pared derecha').visible, true);
+});
+test('el pasillo llega a los tres puestos y la vista general conserva límites', async () => {
+  const { world, scene } = await worldFixture();
   let position = { ...CONFIG.navigation.spawn };
-  const waypoints = [
-    { x: 0.6, z: position.z },
-    { x: 0.6, z: 3.3 },
-    { x: 2.7, z: 3.3 },
-    { x: 0.6, z: 3.3 },
-    { x: 0.6, z: 0.2 },
-    { x: 2.7, z: 0.2 },
-    { x: 0.6, z: 0.2 },
-    { x: 0.6, z: -2.9 },
-    { x: 2.7, z: -2.9 },
-  ];
-  for (const target of waypoints) {
-    position = goTo(position, target);
-    near(position.x, target.x);
-    near(position.z, target.z);
-    assert.ok(clear(position), `Hay un obstáculo en ${JSON.stringify(position)}`);
+  const goals = [{ x: -0.6, z: position.z }, { x: -0.6, z: 4.3 }, { x: 0.35, z: 4.3 }, { ...CONFIG.workstation.target }, { x: 0.35, z: 4.3 }, { x: 0.35, z: 0.1 }, { x: 1.35, z: 0.1 }, { x: 0.35, z: 0.1 }, { x: 0.35, z: -3.55 }, { x: 1.35, z: -3.55 }];
+  for (const goal of goals) {
+    position = moveCircle(position, { x: goal.x - position.x, z: goal.z - position.z }, CONFIG.navigation.radius, world.colliders);
+    near(position.x, goal.x); near(position.z, goal.z);
   }
-});
-
-test('las paredes laterales y el fondo impiden abandonar el piso', () => {
-  const left = goTo({ x: 0, z: 4.8 }, { x: -20, z: 4.8 });
-  const right = goTo({ x: 0, z: 4.8 }, { x: 20, z: 4.8 });
-  const back = goTo({ x: 0, z: 0 }, { x: 0, z: -20 });
-  near(left.x, -7.96 + radius);
-  near(right.x, 7.96 - radius);
-  near(back.z, -5.96 + radius);
-  assert.ok([left, right, back].every(clear));
-});
-
-test('la vista general muestra al cliente y conserva todas las colisiones', () => {
-  const originalColliders = structuredClone(world.colliders);
-  world.setOverview(true);
-  assert.equal(world.player.visible, true);
-  assert.equal(scene.getObjectByName('Techo').visible, false);
-  assert.equal(scene.getObjectByName('Pared derecha').visible, false);
-  assert.deepEqual(world.colliders, originalColliders);
-  world.setOverview(false);
-  assert.equal(world.player.visible, false);
-  assert.equal(scene.getObjectByName('Techo').visible, true);
-  assert.equal(scene.getObjectByName('Pared derecha').visible, true);
+  const before = structuredClone(world.colliders); world.setOverview(true);
+  assert.equal(scene.getObjectByName('Techo').visible, false); assert.equal(world.player.visible, true);
+  assert.deepEqual(world.colliders, before); world.setOverview(false);
 });
