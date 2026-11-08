@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { moveCircle, stepVertical } from './physics.js';
+import { createLookController } from './look.js';
 
 /** Cámara del cliente, con WASD, mouse y colisiones independientes de la escena. */
 export function createNavigation({ camera, domElement, colliders, config, onLockChange = () => {} }) {
   const controls = new PointerLockControls(camera, domElement);
-  controls.pointerSpeed = 0.75;
-  controls.minPolarAngle = Math.PI * 0.08;
-  controls.maxPolarAngle = Math.PI * 0.92;
+  // Usamos el addon para capturar/liberar el mouse. Su giro directo queda
+  // desactivado: la mirada se filtra y aplica una sola vez por cuadro abajo.
+  controls.enabled = false;
+  const look = createLookController(config.look);
+  const lookEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
   const keys = new Set();
   const velocity = new THREE.Vector3();
@@ -16,14 +19,17 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
   const direction = new THREE.Vector3();
   const movementKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']);
   let enabled = true;
+  let suspended = document.hidden;
   let verticalVelocity = 0;
 
   const clearInput = () => {
     keys.clear();
     velocity.set(0, 0, 0);
+    lookEuler.setFromQuaternion(camera.quaternion, 'YXZ');
+    look.reset({ yaw: lookEuler.y, pitch: lookEuler.x });
   };
   const onKeyDown = (event) => {
-    if (!enabled || !controls.isLocked || !movementKeys.has(event.code)) return;
+    if (!enabled || suspended || !controls.isLocked || !movementKeys.has(event.code)) return;
     event.preventDefault();
     keys.add(event.code);
   };
@@ -32,6 +38,7 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     if (controls.isLocked && movementKeys.has(event.code)) event.preventDefault();
   };
   const onLock = () => {
+    suspended = document.hidden;
     clearInput();
     onLockChange(true);
   };
@@ -46,27 +53,44 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     }));
   };
   const onVisibilityChange = () => {
-    if (document.hidden) clearInput();
+    suspended = document.hidden;
+    clearInput();
+  };
+  const onBlur = () => {
+    suspended = true;
+    clearInput();
+  };
+  const onFocus = () => {
+    suspended = document.hidden;
+    clearInput();
+  };
+  const onMouseMove = (event) => {
+    if (!enabled || suspended || document.hidden || !controls.isLocked) return;
+    look.addMovement(event.movementX, event.movementY);
   };
 
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
   document.addEventListener('visibilitychange', onVisibilityChange);
   document.addEventListener('pointerlockerror', onPointerLockError);
-  window.addEventListener('blur', clearInput);
+  document.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('blur', onBlur);
+  window.addEventListener('focus', onFocus);
   controls.addEventListener('lock', onLock);
   controls.addEventListener('unlock', onUnlock);
 
   function reset() {
-    clearInput();
     verticalVelocity = 0;
     camera.position.set(config.spawn.x, config.eyeHeight, config.spawn.z);
     camera.rotation.set(0, config.spawn.yaw ?? 0, 0, 'YXZ');
+    clearInput();
   }
 
   function update(dt) {
-    if (!enabled || !controls.isLocked) return;
+    if (!enabled || suspended || document.hidden || !controls.isLocked) return;
     const step = Math.min(Math.max(Number.isFinite(dt) ? dt : 0, 0), 0.05);
+    const pose = look.update(step);
+    if (pose.changed) camera.rotation.set(pose.pitch, pose.yaw, 0, 'YXZ');
     const frontInput = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
     const sideInput = Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
 
@@ -109,8 +133,8 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     },
     setEnabled(value) {
       enabled = Boolean(value);
+      clearInput();
       if (!enabled) {
-        clearInput();
         if (controls.isLocked) controls.unlock();
       }
     },
@@ -123,7 +147,9 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       document.removeEventListener('pointerlockerror', onPointerLockError);
-      window.removeEventListener('blur', clearInput);
+      document.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
       controls.removeEventListener('lock', onLock);
       controls.removeEventListener('unlock', onUnlock);
       clearInput();

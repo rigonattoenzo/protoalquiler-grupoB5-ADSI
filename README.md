@@ -8,9 +8,10 @@ Esta entrega sigue el pedido de avanzar por hitos. Incluye:
 
 - Un local con un único acceso frontal, recepción y paso por la derecha del mostrador.
 - Tres estaciones amplias reutilizadas, cada una con computadora, superficie de trabajo, impresora sencilla y silla.
-- Armario con frentes transparentes y bobinas, técnico, depósito y dos baños individuales identificados. Los interiores de esas habitaciones están bloqueados.
+- Armario con frentes transparentes y bobinas, técnico, depósito y dos baños individuales identificados. Las tres habitaciones forman un bloque continuo contra la pared izquierda, sin huecos entre ellas y hasta el techo. Sus interiores están bloqueados.
 - Vidriera con dos piezas de ejemplo.
 - Cliente en primera persona, WASD, mouse, aceleración/frenado y colisiones con paredes, mobiliario y técnico.
+- Mirada con filtro de picos del mouse, límite de velocidad de giro y suavizado por tiempo transcurrido. Al capturar o retomar el mouse se descarta el primer desplazamiento para evitar un salto de recentrado.
 - Apoyo sobre el piso mediante gravedad simple. No hay salto, escaleras ni objetos físicos dinámicos.
 - Vista general sin techo ni paredes frontal/derecha, con el muñequito del cliente en su posición, además del técnico.
 - Reinicio de cámara, ayuda y controles que se pueden ocultar para grabar.
@@ -66,6 +67,7 @@ src/
   world.js                 Local, muebles, luces y colisionadores estáticos
   character.js             Personajes construidos con primitivas
   navigation.js            WASD, Pointer Lock y movimiento de cámara
+  look.js                  Filtro y actualización suave de la mirada
   physics.js               Colisión círculo/AABB y apoyo sobre el piso
 scripts/
   serve.mjs                Servidor local opcional sin dependencias
@@ -90,7 +92,7 @@ npm run check
 npm test
 ```
 
-Las pruebas verifican física y distribución; no reemplazan una prueba visual. El detalle de lo comprobado y la limitación del acceso al navegador están en [validación del hito](docs/validacion-hito-1.md).
+Las pruebas verifican física, distribución y controles de cámara; no reemplazan una prueba visual. El detalle de lo comprobado y la limitación del acceso al navegador están en [validación del hito](docs/validacion-hito-1.md).
 
 Para cerrar la revisión visual en tu computadora:
 
@@ -102,6 +104,8 @@ Para cerrar la revisión visual en tu computadora:
 6. Comprobá luz, carteles y fluidez con tu grabador abierto antes de producir el video.
 
 ## Hitos siguientes
+
+Antes de ampliar el recorrido: ajustar la sensibilidad de la mirada según la preferencia del equipo. El usuario confirmó las correcciones de habitaciones y giros bruscos, y pidió posponer ese ajuste fino para otra iteración.
 
 1. **Recepción y recorrido asistido:** estado centralizado, modalidad, E1, referencia precargada, diseño y preparación guionados.
 2. **Revisión e impresión:** intervención del técnico, confirmación del material, presupuesto ilustrativo, impresión acelerada y resumen repetible.

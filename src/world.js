@@ -71,25 +71,30 @@ export function createWorld(scene) {
   box('Vidriera', [9.2, 2.6, 0.06], [3.4, 1.65, 6.05], 0xb8dce1, { parent: front, transparent: true, opacity: 0.16, depthWrite: false });
   box('Marco vidriera superior', [9.3, 0.1, 0.16], [3.4, 3.05, 6.05], colors.ink, { parent: front });
   [-1.15, 3.4, 7.95].forEach(x => box('Parante vidriera', [0.08, 3.1, 0.16], [x, 1.55, 6.05], colors.ink, { parent: front }));
-  const ceiling = box('Techo', [16, 0.1, 12], [0, 3.37, 0], colors.wall);
+  const ceiling = box('Techo', [CONFIG.room.width, 0.1, CONFIG.room.depth], [0, CONFIG.room.height + 0.05, 0], colors.wall);
   cutaway.push(ceiling);
   // La entrada permite pisar un pequeño umbral; nunca se sale a un piso inexistente.
   barrier('Límite exterior frontal', -8.2, 8.2, 7.02, 7.3);
   barrier('Lateral izquierdo del umbral', -8.2, -5.9, 6.1, 7.3);
   barrier('Lateral derecho del umbral', -3.5, 8.2, 6.1, 7.3);
 
-  // Habitaciones sin interiores transitables, como define el alcance.
+  // Un mismo bloque continuo contra el lateral: las habitaciones comparten
+  // límites y llegan al techo. Sus interiores siguen fuera del recorrido.
+  const serviceLeft = -CONFIG.room.width / 2;
+  const serviceRight = -4.075;
   [
-    { name: 'DEPÓSITO', z: -4.45, sub: 'Solo personal', color: 0xb6c1c3 },
-    { name: 'BAÑO HOMBRES', z: -1.5, sub: 'Individual', color: 0xc5ced0 },
-    { name: 'BAÑO MUJERES', z: 1.45, sub: 'Individual', color: 0xc5ced0 },
-  ].forEach(({ name, z, sub, color }) => {
-    box(name, [3.85, 2.75, 2.7], [-6.0, 1.375, z], color, { solid: true });
+    { name: 'DEPÓSITO', minZ: -CONFIG.room.depth / 2, maxZ: -3, sub: 'Solo personal', color: 0xb6c1c3 },
+    { name: 'BAÑO HOMBRES', minZ: -3, maxZ: -0.05, sub: 'Individual', color: 0xc5ced0 },
+    { name: 'BAÑO MUJERES', minZ: -0.05, maxZ: 2.9, sub: 'Individual', color: 0xc5ced0 },
+  ].forEach(({ name, minZ, maxZ, sub, color }) => {
+    const z = (minZ + maxZ) / 2;
+    const x = (serviceLeft + serviceRight) / 2;
+    box(name, [serviceRight - serviceLeft, CONFIG.room.height, maxZ - minZ], [x, CONFIG.room.height / 2, z], color, { solid: true });
     box(`Puerta ${name}`, [0.055, 2.15, 0.95], [-4.04, 1.08, z], colors.wall);
     box(`Marco ${name}`, [0.07, 0.08, 1.11], [-4.0, 2.18, z], colors.ink);
     box(`Manija ${name}`, [0.09, 0.045, 0.12], [-3.99, 1.02, z + 0.3], colors.ink);
     sign(`${name}\n${sub}`, { x: -3.997, y: 1.75, z, width: 0.85, height: 0.45, rotation: Math.PI / 2, fontSize: 63 });
-    const topLabel = sign(name, { x: -6, y: 2.761, z, width: 3.1, height: 0.65, background: '#b6c1c3', color: '#233d45', fontSize: 72 });
+    const topLabel = sign(name, { x, y: CONFIG.room.height + 0.011, z, width: 3.1, height: 0.65, background: '#b6c1c3', color: '#233d45', fontSize: 72 });
     topLabel.rotation.x = -Math.PI / 2;
   });
 

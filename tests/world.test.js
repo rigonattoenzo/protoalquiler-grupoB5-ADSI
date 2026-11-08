@@ -70,6 +70,27 @@ test('los dos baños y el depósito están identificados y bloquean el acceso a 
   }
 });
 
+test('baños y depósito forman un bloque continuo del piso al techo contra la pared izquierda', () => {
+  const names = ['DEPÓSITO', 'BAÑO HOMBRES', 'BAÑO MUJERES'];
+  const bounds = names.map(name => new THREE.Box3().setFromObject(scene.getObjectByName(name)));
+  const ceiling = new THREE.Box3().setFromObject(scene.getObjectByName('Techo'));
+  for (const room of bounds) {
+    near(room.min.y, 0);
+    near(room.max.y, ceiling.min.y);
+    near(room.min.x, -CONFIG.room.width / 2);
+    near(room.max.x, bounds[0].max.x);
+  }
+  near(bounds[0].min.z, -CONFIG.room.depth / 2);
+  near(bounds[0].max.z, bounds[1].min.z);
+  near(bounds[1].max.z, bounds[2].min.z);
+  // También se cierran los antiguos huecos en el volumen de colisión.
+  for (const z of [-2.98, -0.02]) {
+    const stopped = goTo({ x: -3.2, z }, { x: -7, z });
+    near(stopped.x, bounds[0].max.x + radius);
+    assert.ok(clear(stopped));
+  }
+});
+
 test('el único acceso frontal permite pisar el umbral, con límites a sus lados y al frente', () => {
   const passage = [];
   for (const x of [-7.5, -6.5, -5.3, -4.7, -4.1, -3, -1, 0, 1, 7.5]) {
