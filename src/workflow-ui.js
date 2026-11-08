@@ -10,29 +10,30 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
   $('flow-action').addEventListener('click', onAction);
   const quote = getQuote();
   // Solo constantes del guion; los diálogos se escriben con textContent.
-  $('quote-detail').innerHTML = '<div><span>Estación / ' + DEMO.representedMinutes + ' min</span><b>' + money(quote.station) + '</b></div><div><span>PLA / ' + DEMO.grams + ' g</span><b>' + money(quote.material) + '</b></div><div class="total"><span>Total de ejemplo</span><b>' + money(quote.total) + '</b></div>';
+  $('quote-detail').innerHTML = '<div><span>Estación / ' + DEMO.representedMinutes + ' min</span><b>' + money(quote.station) + '</b></div><div><span>PLA / ' + DEMO.grams + ' g</span><b>' + money(quote.material) + '</b></div><div class="total"><span>Total</span><b>' + money(quote.total) + '</b></div>';
   return {
     setMenuOpen(value) { menuOpen = Boolean(value); key = ''; $('service-menu').hidden = !menuOpen; },
     say(who, text, seconds = 3.5) { flash = { who, text, remaining: seconds }; key = ''; },
-    render(state, target, { dt = 0, mode = 'walk', locked = false } = {}) {
+    render(state, target, { dt = 0, mode = 'walk', locked = false, materialStatus = 'idle' } = {}) {
       if (flash) { flash.remaining -= dt; if (flash.remaining <= 0) { flash = null; key = ''; } }
       const step = STEPS[state.stepIndex];
-      const token = [state.stepId, menuOpen, Boolean(flash), flash?.text, target.waiting, target.nearTarget, locked, innerWidth, innerHeight].join('|');
+      const token = [state.stepId, menuOpen, Boolean(flash), flash?.text, target.waiting, target.nearTarget, locked, materialStatus, innerWidth, innerHeight].join('|');
       const changed = key !== token;
       if (key !== token) {
         key = token;
         speaker = flash?.who || (menuOpen ? 'receptionist' : step?.speaker || 'receptionist');
         $('dialogue-speaker').textContent = names[speaker];
-        $('dialogue-text').textContent = flash?.text || (menuOpen
+        const materialLines = { 'to-cabinet': 'Voy al armario a buscar el PLA verde. Ahora vuelvo.', pickup: 'Esta es la bobina para tu trabajo. La llevo a la impresora.', 'to-printer': 'Ya tengo el PLA. Voy a colocarlo y preparar la alimentación.', loading: 'Estoy colocando la bobina. Enseguida empezamos a imprimir.' };
+        $('dialogue-text').textContent = flash?.text || (state.stepId === 'material' ? materialLines[materialStatus] || step.dialogue : menuOpen
           ? '¡Hola! La estación cuesta ' + money(DEMO.hourlyRate) + '/hora y el PLA ' + money(DEMO.pricePerGram) + '/g. ¿Cómo querés trabajar? Elegí una de las tres fichas.'
           : target.waiting ? 'Ya voy a E1. Dejame pasar y me quedo con vos durante el trabajo.'
             : step?.dialogue || '¡Hola! Acercate al mostrador y conversamos sobre tu proyecto.');
-        $('dialogue-note').textContent = menuOpen ? 'Precios ficticios · PC, impresora y asistencia básica incluidas' : ['confirm', 'checkout', 'complete'].includes(state.stepId) ? 'Importes ilustrativos · tiempo representado · material incluido el auxiliar' : '';
-        $('quote-detail').hidden = !['confirm', 'checkout', 'complete'].includes(state.stepId);
+        $('dialogue-note').textContent = menuOpen ? 'PC, impresora y asistencia básica incluidas' : ['confirm', 'checkout'].includes(state.stepId) ? 'Material incluido el auxiliar · uso de estación y PLA' : '';
+        $('quote-detail').hidden = !['confirm', 'checkout'].includes(state.stepId);
         $('service-menu').hidden = !menuOpen;
         bubble.classList.toggle('client', speaker === 'client');
-        $('flow-guide').hidden = !step || menuOpen;
-        $('flow-step-label').textContent = step ? String(state.stepIndex + 1).padStart(2, '0') + '/' + STEPS.length : '';
+        $('flow-guide').hidden = !step || menuOpen || state.complete;
+        $('flow-step-label').textContent = !step ? '' : step.target === 'exit' ? 'SALIDA' : step.target === 'reception' ? 'RECEPCIÓN' : step.id === 'material' ? 'MATERIAL' : step.id === 'confirm' ? 'PRESUPUESTO' : step.id.includes('design') || step.id.includes('review') ? 'DISEÑO' : step.id.includes('printing') || step.id.includes('ready') ? 'IMPRESIÓN' : 'E1';
         $('flow-title').textContent = target.waiting ? 'Esperá al técnico junto a E1' : step?.title || '';
         $('flow-action').textContent = step?.action || 'En curso…';
         $('flow-action').disabled = !target.nearTarget || !step?.action;
@@ -41,7 +42,7 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
       const anchor = speaker === 'technician' ? world.technician : world.receptionist;
       const distance = camera.position.distanceTo(anchor.position);
       const active = mode === 'walk' && (menuOpen || flash || state.mode || distance < 3.2);
-      const hidden = !active || (distance > 6.5 && !menuOpen && speaker !== 'client');
+      const hidden = state.complete || !active || (distance > 6.5 && !menuOpen && speaker !== 'client');
       if (bubble.hidden !== hidden) { bubble.hidden = hidden; if (!hidden) bubbleHeight = bubble.offsetHeight || 190; }
       if (bubble.hidden) return;
       projectionTime += dt;

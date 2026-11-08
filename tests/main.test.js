@@ -15,6 +15,7 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
     append(...items) { this.children.push(...items); }
     getContext() { return { fillRect() {}, fillText() {} }; }
     querySelectorAll() { return []; }
+    focus() { this.focused = true; }
     click() { this.dispatchEvent(new Event('click')); }
   }
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -48,20 +49,40 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   press('KeyE'); assert.equal(elements.get('service-menu').hidden, false);
   press('Digit2'); assert.equal(elements.get('service-menu').hidden, false, 'Modalidad pendiente no inicia un guion');
   press('Digit1'); assert.equal(elements.get('service-menu').hidden, true);
-  press('KeyE'); const stationTitle = elements.get('flow-title').textContent;
+  const stationTitle = elements.get('flow-title').textContent;
   press('KeyE'); assert.equal(elements.get('flow-title').textContent, stationTitle, 'No avanza desde recepción en un paso de E1');
   renderer.camera.position.set(CONFIG.workstation.target.x, 1.65, CONFIG.workstation.target.z);
-  press('KeyE'); press('KeyE'); frames(360);
-  // Crear base, revisión, presupuesto y suministro técnico.
-  for (let i = 0; i < 4; i += 1) press('KeyE');
+  press('KeyE'); frames(360);
+  press('KeyE'); assert.match(elements.get('flow-title').textContent, /Revisión y presupuesto/);
+  assert.doesNotMatch(elements.get('dialogue-note').textContent, /fictici|ilustrativ|ejemplo/i);
+  press('KeyE'); assert.match(elements.get('flow-title').textContent, /técnico prepara/);
+  let sawDoor = false, sawSpool = false;
+  for (let i = 0; i < 2400 && !/Imprimiendo la base/.test(elements.get('flow-title').textContent); i += 1) {
+    frames(1);
+    sawDoor ||= renderer.scene.getObjectByName('Puerta armario').rotation.y < -0.5;
+    sawSpool ||= renderer.scene.getObjectByName('Bobina en manos del técnico').visible;
+  }
+  assert.ok(sawDoor && sawSpool, 'Abre el armario y lleva la bobina antes de imprimir');
+  assert.equal(renderer.scene.getObjectByName('Bobina PLA disponible').visible, false);
   assert.match(elements.get('flow-title').textContent, /Imprimiendo la base/);
   frames(450); assert.match(elements.get('flow-title').textContent, /Base terminada/);
   press('KeyE'); assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, true);
   press('KeyE'); press('KeyE'); frames(450);
   assert.match(elements.get('flow-title').textContent, /Respaldo terminado/);
   press('KeyE'); frames(170); assert.match(elements.get('flow-title').textContent, /Tu pieza terminada/);
-  press('KeyE'); renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1); press('KeyE');
-  assert.match(elements.get('flow-title').textContent, /Recorrido completado/); assert.match(elements.get('quote-detail').innerHTML, /11\.500/);
-  elements.get('restart-button').click(); frames(1);
+  press('KeyE');
+  assert.equal(renderer.scene.getObjectByName('Bolsa con soporte en mano').visible, true);
+  assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, false);
+  renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1); press('KeyE');
+  assert.match(elements.get('flow-title').textContent, /Salí por el acceso/); assert.match(elements.get('quote-detail').innerHTML, /11\.500/);
+  press('KeyE'); assert.equal(elements.get('service-menu').hidden, true, 'No vuelve al saludo después de cobrar');
+  renderer.camera.position.set(-4.7, 1.65, CONFIG.room.front + 0.5); frames(2);
+  assert.equal(elements.get('end-screen').hidden, false); assert.equal(elements.get('dialogue').hidden, true);
+  assert.equal(elements.get('end-restart').focused, true); assert.equal(elements.get('toolbar').inert, true);
+  press('KeyE'); assert.equal(elements.get('service-menu').hidden, true);
+  elements.get('end-restart').click(); frames(1);
+  assert.equal(elements.get('end-screen').hidden, true);
+  assert.equal(elements.get('toolbar').inert, false);
+  assert.equal(renderer.scene.getObjectByName('Bobina PLA disponible').visible, true);
   assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, false); assert.equal(elements.get('service-menu').hidden, true);
 });

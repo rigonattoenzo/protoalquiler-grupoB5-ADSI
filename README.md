@@ -20,15 +20,20 @@ La consola imprime su dirección (habitualmente `http://127.0.0.1:5500`). Live S
 
 1. Pulsá **Entrar al local**, caminá un poco hacia el mostrador y presioná **E**. Las opciones se ofrecen al conversar con recepción, no al cargar la aplicación.
 2. La recepcionista presenta las tarifas ilustrativas y las tres fichas del mostrador. Elegí **1: Con asistencia**, o mirá esa ficha y tocá E. Con Esc también podés usar los botones del globo.
-3. Presentá la referencia del soporte para celular. Seguí la marca verde hasta E1 y usá la computadora.
-4. Llamá al técnico con E. Dejá libre el paso mientras se acerca: después permanece junto al puesto durante el trabajo.
-5. Creá la base. El diseño aparece en la pantalla de la computadora. El técnico revisa la preparación y presenta el presupuesto del ejemplo.
-6. Confirmá el presupuesto y solicitá la carga de material. La impresora mueve el cabezal y construye la base en una animación acelerada.
+3. Seguí la marca verde hasta E1. Con E abrís el proyecto y llamás al técnico en una sola acción. La idea se conversa con el técnico en el puesto, no se entrega a recepción.
+4. Dejá libre el paso mientras se acerca. Después permanece junto al puesto durante el trabajo.
+5. Creá la base. El diseño aparece en la pantalla de la computadora. El técnico revisa la preparación y presenta el presupuesto.
+6. Confirmá el presupuesto. El técnico va al armario, abre su puerta, retira una bobina, la lleva a la impresora y la coloca. La impresión empieza cuando termina la carga.
 7. Llevá la base terminada a la mesa con E. Diseñá el respaldo en pantalla, validá la segunda pieza e imprimila.
 8. Trasladá el respaldo y observá el ensamblado sobre la mesa.
-9. Mirá el resultado y volvé al mostrador para cerrar la sesión de ejemplo. El desglose no se acumula al repetir acciones.
+9. Mirá el resultado y retirá la bolsa: el soporte deja la mesa y se ve en tu mano. Volvé al mostrador para abonar. El desglose no se acumula al repetir acciones.
+10. Salí por el acceso principal con la bolsa. Cruzar el umbral cierra la historia y muestra una pantalla final. No se vuelve al saludo inicial; solo **Volver a recorrer** inicia otra toma.
 
 Los personajes hablan mediante globos anclados a su posición. Si el hablante queda fuera del encuadre, el globo se ubica en el borde para mantenerlo legible. La guía persistente ocupa una sola línea; las instrucciones principales están en los diálogos y en la escena.
+
+Se redujeron de 13 a **9 confirmaciones con E dentro del recorrido**: se eliminaron la referencia en recepción y acciones separadas de apertura/llamado y revisión inicial; la búsqueda del filamento es automática. La guía muestra el sector o la acción actual, sin numerar cada fase de animación. La zona de interacción de E1 abarca ambos lados de la silla y el frente de la impresora.
+
+Recepción mira al cliente solo mientras ofrece opciones o atiende el cobro. El técnico sigue al cliente con la mirada solo después del llamado y durante su asistencia; al buscar/cargar el material se concentra en esa acción. Las demás personas no siguen al jugador.
 
 **Solo está implementado el recorrido con asistencia.** Diseño autónomo y encargo aparecen en las fichas con “Próximamente”. Sus flujos no se presentan como terminados.
 
@@ -47,6 +52,8 @@ Los personajes hablan mediante globos anclados a su posición. Si el hablante qu
 | Reiniciar historia | Restaurar proceso, piezas, impresiones y datos del ejemplo |
 
 Las impresiones y el ensamblado avanzan por su animación; E no permite saltarlos ni duplicarlos. Al alejarse del mostrador se cierra la elección de fichas. La circulación permanece libre durante el tutorial.
+
+La búsqueda del filamento respeta los muebles y al jugador. Si se bloquea al técnico, basta con apartarse para dejarlo pasar. Al terminar, las acciones y los controles de cámara quedan cerrados hasta reiniciar la historia.
 
 ## Local y personajes
 
@@ -80,6 +87,8 @@ Las proporciones son unidades visuales para la demo, no medidas arquitectónicas
 Fórmula: `tarifa_horaria × minutos / 60 + precio_por_gramo × gramos`. La segunda impresión ya está contemplada en ese total. El tiempo de caminar y grabar no se factura ni altera las cifras. Computadora, impresora y asistencia **básica** se representan incluidas; no se establece una política comercial de modelado intensivo ilimitado.
 
 Los importes son ficticios y las estimaciones están precargadas. La pantalla simula CAD/laminado y las impresoras simulan fabricación; no se conectan a equipos reales. El cierre es una demostración, sin pagos ni facturación real.
+
+Por pedido del grupo, esos avisos se conservan en la documentación técnica y no se dicen dentro de los diálogos ni del tarifario: la escena representa una atención real con sus valores, sin comentarios sobre la producción del video.
 
 ## Rendimiento
 
@@ -116,17 +125,18 @@ npm test
 
 Las pruebas cubren secuencia completa, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, técnico y colisiones, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Ver [estado de la iteración actual](docs/estado-hito-3.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
+Ver [estado de la iteración actual](docs/estado-hito-4.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
 ## GitHub y próximos pasos
 
-El repositorio local usa `main`. Cuando se cree el remoto en GitHub, debe estar vacío, sin README, .gitignore ni licencia adicionales. Después:
+Repositorio: [rigonattoenzo/protoalquiler-grupoB5-ADSI](https://github.com/rigonattoenzo/protoalquiler-grupoB5-ADSI). La rama de trabajo es `main`. Para guardar y subir cambios posteriores:
 
 ```sh
-git remote add origin https://github.com/TU_USUARIO/protoalquiler-grupoB5-ADSI.git
-git push -u origin main
+git add .
+git commit -m "Describe el cambio"
+git push
 ```
 
-El material docente en `.reference/` y los ZIP están excluidos de Git. No se publicó la aplicación ni se creó un remoto.
+El material docente en `.reference/` y los ZIP están excluidos de Git. Subir el código al repositorio no publica automáticamente una web; la aplicación se ejecuta con Live Server.
 
 Próximos pasos: revisar las tomas y ajustar detalles de encuadre/sensibilidad, implementar autónomo y encargo reutilizando el escenario, y agregar cámaras preparadas para grabación. No se requiere CAD real, backend, cuentas, reservas, inventario comercial ni pagos.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { worldFixture, load, canvasDocument } from './helpers.mjs';
+import { worldFixture, load, canvasDocument, THREE } from './helpers.mjs';
 import { createWorkflow, STEPS, DEMO } from '../src/workflow.js';
 import { CONFIG } from '../src/config.js';
 import { overlapsCircle } from '../src/physics.js';
@@ -10,8 +10,8 @@ async function fixture(t) {
   const view = createWorkflowScene({ world, scene });
   if (previous === undefined) delete globalThis.document; else globalThis.document = previous;
   const flow = createWorkflow(); flow.subscribe(state => view.applyState(state));
-  const frames = count => { for (let i = 0; i < count; i += 1) { flow.tick(0.05); view.update(0.05, flow.getState(), { x: -4.7, z: 6.6 }); } };
-  const until = id => { if (!flow.getState().mode) flow.start('assisted'); let guard = 0; while (flow.getState().stepId !== id && guard++ < 100) { if (STEPS[flow.getState().stepIndex].automatic) frames(200); else flow.advance(); } assert.equal(flow.getState().stepId, id); view.update(0, flow.getState()); };
+  const frames = count => { for (let i = 0; i < count; i += 1) { flow.tick(0.05); view.update(0.05, flow.getState(), { x: -4.7, z: 6.6 }); if (flow.getState().stepId === 'material' && view.materialReady) flow.completeMaterial(); } };
+  const until = id => { if (!flow.getState().mode) flow.start('assisted'); let guard = 0; while (flow.getState().stepId !== id && guard++ < 5000) { if (STEPS[flow.getState().stepIndex].automatic) frames(1); else if (flow.getState().stepId === 'exit') flow.finish(); else flow.advance(); } assert.equal(flow.getState().stepId, id); view.update(0, flow.getState()); };
   t.after(() => view.dispose()); return { world, scene, flow, view, frames, until };
 }
 test('dos impresiones, piezas trasladadas a mesa y ensamblado sin duplicar geometrías', async t => {
@@ -27,6 +27,25 @@ test('dos impresiones, piezas trasladadas a mesa y ensamblado sin duplicar geome
   assert.ok(back.visible && tableBase.visible); assert.ok(Math.abs(back.position.x - tableBase.position.x) < 1e-8);
   const count = scene.children.length; view.applyState(flow.getState()); view.update(0, flow.getState()); assert.equal(scene.children.length, count);
   flow.reset(); view.update(0, flow.getState()); assert.equal(tableBase.visible, false); assert.equal(back.visible, false);
+});
+test('la mirada solo se activa al atender: recepción durante la conversación y técnico después del llamado', async t => {
+  const { world, view, flow, until, frames } = await fixture(t);
+  const client = { x: -6.4, y: 1.65, z: 5.8 };
+  const clerkHead = world.receptionist.getObjectByName('Cabeza'), techHead = world.technician.getObjectByName('Cabeza');
+  for (let i = 0; i < 30; i += 1) view.update(0.05, flow.getState(), client);
+  assert.equal(clerkHead.rotation.y, 0); assert.equal(techHead.rotation.y, 0);
+  for (let i = 0; i < 30; i += 1) view.update(0.05, flow.getState(), client, { receptionAttending: true });
+  assert.ok(Math.abs(clerkHead.rotation.y) > 0.2); assert.equal(techHead.rotation.y, 0);
+  for (let i = 0; i < 30; i += 1) view.update(0.05, flow.getState(), client);
+  assert.ok(Math.abs(clerkHead.rotation.y) < 0.01);
+  until('design-base'); frames(450);
+  const atDesk = { ...CONFIG.workstation.target, y: 1.65 };
+  for (let i = 0; i < 60; i += 1) view.update(0.05, flow.getState(), atDesk);
+  const facing = new THREE.Vector3(0, 0, -1).applyQuaternion(techHead.getWorldQuaternion(new THREE.Quaternion()));
+  const towardClient = new THREE.Vector3(atDesk.x - world.technician.position.x, 0, atDesk.z - world.technician.position.z).normalize();
+  assert.ok(facing.dot(towardClient) > 0.95);
+  assert.equal(world.worker.getObjectByName('Cabeza').rotation.y, 0);
+  until('checkout'); frames(80); assert.ok(Math.abs(techHead.rotation.y) < 0.01);
 });
 test('técnico patrulla sin atravesar muebles, viene al llamado y permanece junto a E1', async t => {
   const { world, view, flow, until, frames } = await fixture(t);

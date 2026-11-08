@@ -19,23 +19,21 @@ export function getQuote() {
 export const money = amount => '$ ' + Number(amount).toLocaleString('es-AR');
 
 export const STEPS = Object.freeze([
-  { id: 'reception', title: 'Una idea para empezar', speaker: 'receptionist', target: 'reception', action: 'Presentar la referencia', dialogue: 'Vamos a hacer un soporte para celular en dos piezas. Te asigno E1; el técnico te acompaña con el diseño.' },
-  { id: 'station', title: 'Buscá la estación E1', speaker: 'receptionist', target: 'station', action: 'Usar la computadora', dialogue: 'Rodeá el mostrador por la derecha. E1 es el primer puesto; seguí la marca verde.' },
-  { id: 'call-assistant', title: 'Pedí asistencia', speaker: 'client', target: 'station', action: 'Llamar al técnico', dialogue: 'Ya estoy en E1. ¿Me ayudás a diseñar el soporte?' },
+  { id: 'station', title: 'Buscá la estación E1', speaker: 'receptionist', target: 'station', action: 'Abrir el proyecto y llamar al técnico', dialogue: 'Te asigno E1. Allí podés contarle tu idea al técnico y empezar el diseño. Al terminar, volvés conmigo para el cobro.' },
   { id: 'design-base', title: 'Diseñá la base', speaker: 'technician', target: 'station', action: 'Crear la base en pantalla', dialogue: 'Primero una base amplia. Mirá la computadora: vamos a dejar una ranura para encastrar el respaldo.', needsAssistant: true },
-  { id: 'review-base', title: 'Revisión de la primera pieza', speaker: 'technician', target: 'station', action: 'Revisar la base', dialogue: 'La base está preparada: 12 g de PLA. Revisamos orientación y apoyos antes de cargar el material.', needsAssistant: true },
-  { id: 'confirm', title: 'Confirmá el ejemplo', speaker: 'technician', target: 'station', action: 'Confirmar presupuesto ilustrativo', dialogue: 'Las dos piezas suman 25 g. El ejemplo completo usa 90 minutos de estación. ¿Confirmamos el presupuesto?', needsAssistant: true },
-  { id: 'material', title: 'Material bajo control técnico', speaker: 'technician', target: 'station', action: 'Solicitar carga e imprimir base', dialogue: 'Confirmado. Yo suministro y cargo el PLA verde. Ahora habilito la impresión de la base.', needsAssistant: true },
-  { id: 'printing-base', title: 'Imprimiendo la base', speaker: 'technician', target: 'station', action: '', dialogue: 'El cabezal recorre la cama mientras se forma la base, capa por capa. El tiempo está acelerado.', automatic: true },
+  { id: 'confirm', title: 'Revisión y presupuesto', speaker: 'technician', target: 'station', action: 'Confirmar presupuesto', dialogue: 'Revisé la base y su orientación. Las dos piezas van a usar 25 g de PLA y unos 90 minutos de estación. ¿Confirmamos el presupuesto?', needsAssistant: true },
+  { id: 'material', title: 'El técnico prepara el filamento', speaker: 'technician', target: 'station', action: '', dialogue: 'Voy a buscar el PLA verde al armario y lo cargo en la impresora.', automatic: true, sceneDriven: true },
+  { id: 'printing-base', title: 'Imprimiendo la base', speaker: 'technician', target: 'station', action: '', dialogue: 'El material ya está cargado. La base se está formando capa por capa.', automatic: true },
   { id: 'base-ready', title: 'Base terminada', speaker: 'technician', target: 'station', action: 'Llevar la base a la mesa', dialogue: 'La base está lista. La dejamos en la mesa y volvemos a la computadora para diseñar el respaldo.' },
   { id: 'design-detail', title: 'Diseñá el respaldo', speaker: 'technician', target: 'station', action: 'Crear el respaldo en pantalla', dialogue: 'Ahora el respaldo inclinado y su encastre. En la pantalla podés ver cómo encaja con la base.', needsAssistant: true },
-  { id: 'review-detail', title: 'Revisá e imprimí el respaldo', speaker: 'technician', target: 'station', action: 'Validar e imprimir respaldo', dialogue: 'Revisé la segunda pieza: 13 g del mismo PLA. Está contemplada en el presupuesto; no cobramos el material dos veces.', needsAssistant: true },
+  { id: 'review-detail', title: 'Revisá e imprimí el respaldo', speaker: 'technician', target: 'station', action: 'Validar e imprimir respaldo', dialogue: 'El respaldo usa 13 g del mismo PLA. Revisé la orientación y el encastre con la base; ya podemos imprimirlo.', needsAssistant: true },
   { id: 'printing-detail', title: 'Imprimiendo el respaldo', speaker: 'technician', target: 'station', action: '', dialogue: 'Imprimimos la segunda pieza. La base ya está esperando en la mesa.', automatic: true },
   { id: 'detail-ready', title: 'Respaldo terminado', speaker: 'technician', target: 'station', action: 'Llevar a la mesa y ensamblar', dialogue: 'Las dos partes están listas. Unimos el respaldo con la ranura de la base.' },
   { id: 'assembly', title: 'Ensamblando el soporte', speaker: 'technician', target: 'station', action: '', dialogue: 'Encastramos las dos piezas. Este es el resultado del diseño y la fabricación.', automatic: true },
-  { id: 'result', title: 'Tu pieza terminada', speaker: 'technician', target: 'station', action: 'Ir al cierre en recepción', dialogue: '¡Listo! El soporte está ensamblado sobre la mesa. Podés mirarlo y después cerrar la sesión en recepción.' },
-  { id: 'checkout', title: 'Volvé a recepción', speaker: 'receptionist', target: 'reception', action: 'Cerrar sesión de ejemplo', dialogue: 'La sesión incluye computadora, impresora y asistencia básica. Cerramos el ejemplo con el uso de estación y los gramos del trabajo.' },
-  { id: 'complete', title: 'Recorrido completado', speaker: 'receptionist', target: 'reception', action: '', dialogue: '¡Gracias por venir! Te llevás el soporte terminado. Podés reiniciar la toma cuando quieras.' },
+  { id: 'result', title: 'Tu pieza terminada', speaker: 'technician', target: 'station', action: 'Retirar la bolsa con tu soporte', dialogue: '¡Listo! El soporte está ensamblado. Te lo dejo en una bolsa para que lo lleves; después pasá por recepción.' },
+  { id: 'checkout', title: 'Volvé a recepción', speaker: 'receptionist', target: 'reception', action: 'Abonar y retirar el comprobante', dialogue: 'Son ' + DEMO.representedMinutes + ' minutos de estación y ' + DEMO.grams + ' g de PLA. El total es ' + money(getQuote().total) + '. Podemos cerrar tu sesión.' },
+  { id: 'exit', title: 'Salí por el acceso principal', speaker: 'receptionist', target: 'exit', action: '', dialogue: '¡Gracias por venir! Que disfrutes tu soporte. Nos vemos la próxima.' },
+  { id: 'complete', title: 'Hasta la próxima', speaker: 'receptionist', target: 'exit', action: '', dialogue: '' },
 ].map(Object.freeze));
 
 const indexOf = id => STEPS.findIndex(step => step.id === id);
@@ -45,12 +43,12 @@ function stateAt(stepIndex, progress = 0) {
   return Object.freeze({
     mode: active ? 'assisted' : null, stepIndex,
     stepId: active ? STEPS[stepIndex].id : 'idle', station: 'E1', progress,
-    designLevel: at('review-detail') ? 2 : at('review-base') ? 1 : 0,
+    designLevel: at('review-detail') ? 2 : at('confirm') ? 1 : 0,
     prepared: at('confirm'), confirmed: at('material'), materialLoaded: at('printing-base'),
     assistantCalled: active && at('design-base') && !at('checkout'),
     basePrinted: at('base-ready'), baseOnTable: at('design-detail'),
     backPrinted: at('detail-ready'), backOnTable: at('assembly'),
-    assembled: at('result'), complete: at('complete'),
+    assembled: at('result'), hasBag: at('checkout'), complete: at('complete'),
   });
 }
 export function createWorkflow() {
@@ -61,17 +59,19 @@ export function createWorkflow() {
     getState: () => state,
     start(mode) { if (mode !== 'assisted') return false; notify(stateAt(0)); return true; },
     advance() {
-      if (!state.mode || state.complete || STEPS[state.stepIndex].automatic) return false;
+      if (!state.mode || state.complete || !STEPS[state.stepIndex].action || STEPS[state.stepIndex].automatic) return false;
       notify(stateAt(state.stepIndex + 1)); return true;
     },
     tick(dt) {
-      if (!state.mode || !STEPS[state.stepIndex].automatic || !Number.isFinite(dt) || dt <= 0) return false;
+      if (!state.mode || !STEPS[state.stepIndex].automatic || STEPS[state.stepIndex].sceneDriven || !Number.isFinite(dt) || dt <= 0) return false;
       const seconds = state.stepId === 'assembly' ? DEMO.assemblySeconds : DEMO.printSeconds;
       const progress = Math.min(1, state.progress + Math.min(dt, 0.1) / seconds);
       if (progress >= 1 - 1e-9) notify(stateAt(state.stepIndex + 1));
       else state = stateAt(state.stepIndex, progress);
       return true;
     },
+    completeMaterial() { if (state.stepId !== 'material' || !state.confirmed) return false; notify(stateAt(indexOf('printing-base'))); return true; },
+    finish() { if (state.stepId !== 'exit') return false; notify(stateAt(indexOf('complete'))); return true; },
     reset() { if (!state.mode) return false; notify(stateAt(-1)); return true; },
     subscribe(listener) { if (typeof listener !== 'function') throw new TypeError('Se espera una función'); listeners.add(listener); return () => listeners.delete(listener); },
   };

@@ -23,7 +23,8 @@ async function start() {
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
   renderer.shadowMap.enabled = CONFIG.graphics.shadows; renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.setAttribute('aria-label', 'Local 3D'); $('scene').append(renderer.domElement);
-  const world = createWorld(scene), workflow = createWorkflow(), story = createWorkflowScene({ scene, world });
+  scene.add(camera);
+  const world = createWorld(scene), workflow = createWorkflow(), story = createWorkflowScene({ scene, world, camera });
   let mode = 'walk', receptionOpen = false, savedPosition, savedQuaternion;
   const updateControls = () => {
     if (fatal) return;
@@ -39,12 +40,13 @@ async function start() {
   const target = () => targets.getWorkflowTarget(workflow.getState(), camera.position, { mode, menuOpen: receptionOpen, assistantReady: story.assistantReady });
   function closeReception() { receptionOpen = false; ui.setMenuOpen(false); updateControls(); }
   function openReception() {
+    if (workflow.getState().mode) return;
     if (mode !== 'walk' || !targets.nearReception(camera.position)) { showStatus('Acercate al mostrador para hablar con recepción.'); return; }
     receptionOpen = true; ui.setMenuOpen(true); updateControls();
   }
   function selectMode(id) {
     if (!receptionOpen || !targets.nearReception(camera.position)) return;
-    if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Esa modalidad está en la oferta, pero su recorrido todavía está en preparación. Probemos el diseño con asistencia.'); return; }
+    if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Por ahora podemos atenderte con diseño asistido en E1. El técnico te acompaña desde el diseño hasta la impresión.'); return; }
     workflow.start(id); closeReception();
     if (!navigation.isLocked) navigation.enter();
   }
@@ -56,40 +58,50 @@ async function start() {
       return;
     }
     const state = workflow.getState();
-    if (!state.mode || state.complete) { openReception(); return; }
+    if (state.complete || state.stepId === 'exit') return;
+    if (!state.mode) { openReception(); return; }
     const destination = target();
     if (!destination.nearTarget) {
       if (destination.waiting) ui.say('technician', 'Voy hacia E1. Si estoy en el paso, dejame un lugar para acercarme.');
       return;
     }
-    if (state.stepId === 'call-assistant') ui.say('client', STEPS[state.stepIndex].dialogue);
+    if (state.stepId === 'station') ui.say('client', 'Quiero un soporte para celular. ¿Me ayudás a diseñarlo?');
     workflow.advance();
   }
   function walk(capture = true) {
+    if (workflow.getState().complete) return;
     if (mode === 'overview') {
       mode = 'walk'; world.setOverview(false); camera.position.copy(savedPosition); camera.quaternion.copy(savedQuaternion); camera.fov = 68; camera.updateProjectionMatrix();
     }
     navigation.setEnabled(true); updateControls(); if (capture) navigation.enter();
   }
   function overview() {
+    if (workflow.getState().complete) return;
     if (mode === 'overview') { walk(); return; }
     closeReception(); savedPosition = camera.position.clone(); savedQuaternion = camera.quaternion.clone();
     world.player.position.set(camera.position.x, 0, camera.position.z); world.player.rotation.y = camera.rotation.y;
     mode = 'overview'; navigation.setEnabled(false); world.setOverview(true);
     camera.position.set(...CONFIG.overview.position); camera.lookAt(...CONFIG.overview.target); camera.fov = 46; camera.updateProjectionMatrix(); updateControls();
   }
-  function resetCamera() { walk(false); closeReception(); navigation.reset(); updateControls(); }
+  function resetCamera() { if (workflow.getState().complete) return; walk(false); closeReception(); navigation.reset(); updateControls(); }
   function restart() { workflow.reset(); story.reset(); resetCamera(); showStatus('Toma reiniciada. Acercate a recepción y presioná E.'); }
-  workflow.subscribe(state => { story.applyState(state); updateControls(); });
+  workflow.subscribe(state => {
+    story.applyState(state); $('end-screen').hidden = !state.complete;
+    for (const id of ['hud', 'toolbar', 'welcome', 'help-panel', 'dialogue', 'flow-guide']) $(id).inert = state.complete;
+    if (state.complete) { closeReception(); navigation.setEnabled(false); $('end-restart').focus({ preventScroll: true }); }
+    updateControls();
+  });
   story.applyState(workflow.getState());
   $('enter-button').addEventListener('click', () => walk()); $('walk-button').addEventListener('click', () => walk());
   $('overview-button').addEventListener('click', overview); $('reset-button').addEventListener('click', resetCamera); $('restart-button').addEventListener('click', restart);
+  $('end-restart').addEventListener('click', restart);
   $('help-button').addEventListener('click', () => { $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); });
   renderer.domElement.addEventListener('click', () => { if (mode === 'walk' && !navigation.isLocked) walk(); });
   renderer.domElement.addEventListener('navigationerror', event => showStatus(event.detail.message));
   renderer.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); showError(new Error('Se perdió el contexto gráfico; recargá la página.')); });
   window.addEventListener('keydown', event => {
     if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
+    if (workflow.getState().complete) return;
     const number = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(event.code);
     if (number >= 0 && receptionOpen) { event.preventDefault(); selectMode(MODES[number % 3].id); }
     if (event.code === 'KeyE') { event.preventDefault(); interact(); }
@@ -102,15 +114,19 @@ async function start() {
   let previousTime, sampleTime, sampleFrames = 0, lastZone;
   renderer.setAnimationLoop(time => {
     const dt = previousTime === undefined ? 0 : Math.min((time - previousTime) / 1000, 0.05); previousTime = time;
-    navigation.update(dt);
+    if (!workflow.getState().complete) navigation.update(dt);
     if (!document.hidden) workflow.tick(dt);
-    const state = workflow.getState();
-    story.update(dt, state, mode === 'walk' ? camera.position : savedPosition);
+    let state = workflow.getState();
+    const playerPosition = mode === 'walk' ? camera.position : savedPosition;
+    story.update(dt, state, playerPosition, { firstPerson: mode === 'walk', receptionAttending: targets.nearReception(playerPosition) && (receptionOpen || state.stepId === 'checkout') });
+    if (state.stepId === 'material' && story.materialReady) workflow.completeMaterial();
+    if (mode === 'walk' && state.stepId === 'exit' && targets.atExit(camera.position)) workflow.finish();
+    state = workflow.getState();
     if (receptionOpen && !targets.nearReception(camera.position)) closeReception();
     const destination = target(), step = STEPS[state.stepIndex];
-    ui.render(state, destination, { dt, mode, locked: navigation.isLocked });
-    const hint = mode !== 'walk' ? null : receptionOpen ? 'Elegí una ficha · 1 / 2 / 3 · o mirala y E'
-      : (!state.mode || state.complete) && targets.nearReception(camera.position) ? 'E · Hablar con recepción'
+    ui.render(state, destination, { dt, mode, locked: navigation.isLocked, materialStatus: story.materialStatus });
+    const hint = mode !== 'walk' || state.complete || state.stepId === 'exit' ? null : receptionOpen ? 'Elegí una ficha · 1 / 2 / 3 · o mirala y E'
+      : !state.mode && targets.nearReception(camera.position) ? 'E · Hablar con recepción'
         : destination.waiting ? 'El técnico viene hacia E1'
           : destination.nearTarget && step?.action ? 'E · ' + step.action
             : step?.automatic ? step.title + ' · ' + Math.round(state.progress * 100) + '%' : null;

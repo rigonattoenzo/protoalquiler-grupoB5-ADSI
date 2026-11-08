@@ -56,6 +56,10 @@ body.is-walking #flow-action { display: none; }
 #loading { position: fixed; z-index: 30; inset: 0; background: #f0e6d6; display: grid; place-items: center; color: #7d8067; font-size: 14px; }
 #error-panel { position: fixed; z-index: 40; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px,90vw); border-radius: 14px; padding: 25px; background: #fff8e8; }
 #error-panel p { font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.end-screen { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: #f5ecdbc9; }
+.end-screen > div { width: min(420px, calc(100vw - 40px)); padding: 32px; border: 1px solid #fff8e8; border-radius: 18px; background: #fff9ecf5; box-shadow: 0 15px 50px #473b2920; text-align: center; }
+.end-screen h2 { font-size: 30px; line-height: 1.15; font-weight: 650; letter-spacing: -.7px; }
+.end-screen p:not(.eyebrow) { font-size: 13px; line-height: 1.8; color: #847562; }
 body.ui-hidden #hud, body.ui-hidden #toolbar, body.ui-hidden #welcome, body.ui-hidden #flow-guide, body.ui-hidden #controls-hint, body.ui-hidden #interaction-hint, body.ui-hidden #help-panel, body.ui-hidden #crosshair { display: none !important; }
 body.ui-hidden #performance-panel { display: none !important; }
 @media (max-width: 800px) { #toolbar { top: 53px; right: 12px; max-width: calc(100vw - 24px); flex-wrap: wrap; } #hud { left: 14px; right: 14px; } .speech-bubble { width: min(315px, calc(100vw - 30px)); padding: 13px 16px; } #dialogue-text { font-size: 12px; } .welcome { left: 15px; width: 300px; } .objective { font-size: 10px; bottom: 53px; } #controls-hint { left: 15px; font-size: 9px; } }

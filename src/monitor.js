@@ -23,7 +23,7 @@ export function createMonitorDisplay(screen, { occupied = false } = {}) {
     ctx.fillStyle = level >= 1 ? '#a6d3ab' : '#78928c'; ctx.fillText('01  Base + ranura', 17, 153);
     ctx.fillStyle = level >= 2 ? '#a6d3ab' : '#78928c'; ctx.fillText('02  Respaldo', 17, 198);
     ctx.font = '17px system-ui'; ctx.fillStyle = '#78928c';
-    ctx.fillText('PLA / ' + DEMO.colorName, 17, 480); ctx.fillText('Diseño de ejemplo', 17, 516);
+    ctx.fillText('PLA / ' + DEMO.colorName, 17, 480); ctx.fillText('Diseño asistido', 17, 516);
     const project = (x, y, z) => {
       const angle = Math.sin(elapsed * 0.25) * 0.18;
       const rx = x * Math.cos(angle) - z * Math.sin(angle), rz = x * Math.sin(angle) + z * Math.cos(angle);
@@ -48,7 +48,7 @@ export function createMonitorDisplay(screen, { occupied = false } = {}) {
     }
     if (level >= 1 || !state.mode || occupied) cuboid(0, 0.045, 0, 0.64, 0.09, 0.46, state.mode || occupied ? 1 : 0.28);
     if (level >= 2) { cuboid(0, 0.28, -0.03, 0.5, 0.48, 0.055, 1, -0.25); cuboid(0, 0.1, 0.17, 0.5, 0.08, 0.075); }
-    if (level >= 1) { ctx.font = '18px system-ui'; ctx.fillStyle = '#a4b9ac'; ctx.fillText('64 mm', 500, 490); ctx.fillText('Referencia / modelo preparado', 300, 125); }
+    if (level >= 1) { ctx.font = '18px system-ui'; ctx.fillStyle = '#a4b9ac'; ctx.fillText('64 mm', 500, 490); ctx.fillText('Soporte / componentes', 300, 125); }
     ctx.fillStyle = '#2d4643'; ctx.fillRect(0, 552, 960, 48);
     ctx.fillStyle = '#d8e8cf'; ctx.font = '20px system-ui';
     const label = printing ? 'IMPRESIÓN ' + (second ? '02 / RESPALDO' : '01 / BASE') : second ? 'COMPONENTE 02 / RESPALDO' : 'COMPONENTE 01 / BASE';

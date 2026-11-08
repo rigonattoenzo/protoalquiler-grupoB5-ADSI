@@ -6,6 +6,7 @@ import { DEMO, money } from './workflow.js';
 export function createWorld(scene) {
   const { colors, room, reception, cabinet } = CONFIG;
   const colliders = [], cutaway = [], papers = [], printers = new Map(), screens = new Map(), renderCandidates = [];
+  let filamentSource;
   const materialCache = new Map(), cylinderCache = new Map();
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
   const material = (color, options = {}) => {
@@ -98,7 +99,10 @@ export function createWorld(scene) {
   box('Fondo armario', [cabinet.width, 2.05, 0.06], [cabinet.x, 1.025, cabinet.z - cabinet.depth / 2], colors.wood);
   [0.12, 0.94, 1.77].forEach(y => box('Estante armario', [cabinet.width, 0.065, cabinet.depth], [cabinet.x, y, cabinet.z], colors.wood));
   [-1, 1].forEach(s => box('Marco armario', [0.055, 2.08, cabinet.depth], [cabinet.x + s * cabinet.width / 2, 1.04, cabinet.z], colors.ink));
-  box('Manija armario', [0.035, 0.25, 0.045], [cabinet.x + 0.08, 1.05, cabinet.z + cabinet.depth / 2 + 0.02], colors.ink);
+  const cabinetDoor = new THREE.Group(); cabinetDoor.name = 'Puerta armario'; cabinetDoor.userData.dynamic = true;
+  cabinetDoor.position.set(cabinet.x - cabinet.width / 2, 0, cabinet.z + cabinet.depth / 2 + 0.025); scene.add(cabinetDoor);
+  box('Vidrio puerta armario', [cabinet.width - 0.08, 1.95, 0.035], [cabinet.width / 2, 1, 0], 0xbbd3bd, { parent: cabinetDoor, transparent: true, opacity: 0.16, depthWrite: false });
+  box('Manija armario', [0.035, 0.25, 0.045], [cabinet.width - 0.14, 1.05, 0.04], colors.ink, { parent: cabinetDoor });
   function spool(position, color, scale = 1) {
     const group = new THREE.Group(); group.position.set(...position); group.scale.setScalar(scale); scene.add(group);
     const core = cylinder(group, 0.21, 0.2, [0, 0, 0], color, 24); core.rotation.x = Math.PI / 2;
@@ -106,7 +110,10 @@ export function createWorld(scene) {
     const hub = cylinder(group, 0.065, 0.3, [0, 0, 0], colors.wall); hub.rotation.x = Math.PI / 2;
     return group;
   }
-  [-0.7, 0, 0.7].forEach((dx, i) => [0.43, 1.25].forEach((y, j) => spool([cabinet.x + dx, y, cabinet.z + 0.12], [colors.mint, colors.peach, colors.blue][(i + j) % 3], 0.95)));
+  [-0.7, 0, 0.7].forEach((dx, i) => [0.43, 1.25].forEach((y, j) => {
+    const reel = spool([cabinet.x + dx, y, cabinet.z + 0.12], [colors.mint, colors.peach, colors.blue][(i + j) % 3], 0.95);
+    if (i === 2 && j === 1) { reel.name = 'Bobina PLA disponible'; reel.userData.dynamic = true; filamentSource = reel; }
+  }));
   sign('FILAMENTOS / SUMINISTRO TÉCNICO', { x: cabinet.x, y: 1.94, z: cabinet.z + cabinet.depth / 2 + 0.01, width: 1.95, height: 0.17, fontSize: 48 });
 
   function chair(id, x, z) {
@@ -153,7 +160,7 @@ export function createWorld(scene) {
   sampleGeometries.forEach((geometry, i) => { const mesh = new THREE.Mesh(geometry, material([colors.mint, colors.peach, colors.blue][i % 3])); mesh.name = 'Muestra vidriera ' + (i + 1); mesh.position.set(0.95 + i * 0.9, 1.02, room.front - 0.55); mesh.castShadow = true; scene.add(mesh); });
   sign('PROTOALQUILER 3D', { x: -0.1, y: 2.85, z: room.back + 0.052, width: 4.8, height: 0.52, fontSize: 79 });
   sign('TALLER DE IDEAS / DISEÑO + IMPRESIÓN', { x: -0.1, y: 2.37, z: room.back + 0.053, width: 4.4, height: 0.22, background: '#f7eedf', color: '#5c8066', fontSize: 46 });
-  const rateSign = sign('TARIFAS DE EJEMPLO\nEstación: ' + money(DEMO.hourlyRate) + '/hora\nPLA: ' + money(DEMO.pricePerGram) + '/g\nPC + impresora + asistencia básica\nImportes ficticios / demostración', { x: room.right - 0.052, y: 2.46, z: CONFIG.stations[1].z, width: 2.5, height: 1.05, rotation: -Math.PI / 2, background: '#f0dfbb', color: '#453f3c', fontSize: 42 });
+  const rateSign = sign('TARIFAS\nEstación: ' + money(DEMO.hourlyRate) + '/hora\nPLA: ' + money(DEMO.pricePerGram) + '/g\nPC + impresora + asistencia básica', { x: room.right - 0.052, y: 2.46, z: CONFIG.stations[1].z, width: 2.5, height: 1.05, rotation: -Math.PI / 2, background: '#f0dfbb', color: '#453f3c', fontSize: 42 });
   rateSign.name = 'Tarifario'; cutaway.push(rateSign);
   const entryLabel = sign('ACCESO ÚNICO', { x: -4.7, y: 0.04, z: room.front + 0.5, width: 2, height: 0.3, fontSize: 60 }); entryLabel.rotation.x = -Math.PI / 2;
 
@@ -192,7 +199,7 @@ export function createWorld(scene) {
   }
   const raycaster = new THREE.Raycaster();
   return {
-    colliders, player, receptionist, technician, worker, printers, screens, papers,
+    colliders, player, receptionist, technician, worker, printers, screens, papers, cabinetDoor, filamentSource,
     setOverview(enabled) { cutaway.forEach(object => { object.visible = !enabled; }); player.visible = enabled; },
     paperAtAim(camera) { raycaster.setFromCamera(new THREE.Vector2(), camera); return raycaster.intersectObjects(papers, false)[0]?.object.userData.mode ?? null; },
     getZone({ x, z }) {
