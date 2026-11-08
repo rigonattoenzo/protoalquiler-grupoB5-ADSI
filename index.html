@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#172c35" />
-    <meta name="description" content="Recorrido del local de ProtoAlquiler 3D. Hito 01: espacio, iluminación y movimiento." />
-    <title>ProtoAlquiler 3D | Hito 01</title>
+    <meta name="description" content="Recorrido del local de ProtoAlquiler 3D. Hito 02: recepción, diseño asistido y preparación de una pieza." />
+    <title>ProtoAlquiler 3D | Hito 02</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23172c35'/%3E%3Cpath d='M32 12 50 22v20L32 52 14 42V22Zm0 0v20m18-10L32 32 14 22m18 10v20' fill='none' stroke='%238ed8bd' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
     <script type="importmap">
@@ -29,13 +29,17 @@
         <div class="brand-name">ProtoAlquiler <span>3D</span><small>Diseñar. Preparar. Crear.</small></div>
       </div>
       <div class="scene-state">
-        <span class="milestone"><span class="state-dot" aria-hidden="true"></span> Hito 01</span>
+        <span class="milestone"><span class="state-dot" aria-hidden="true"></span> Hito 02</span>
         <span class="state-divider" aria-hidden="true"></span>
         <div class="view-state"><span id="view-label">Recorrido libre</span><span id="zone-label">Acceso · recepción</span></div>
       </div>
     </header>
 
     <nav id="toolbar" class="toolbar" aria-label="Controles del recorrido">
+      <button id="service-button" class="tool-button" type="button" title="Elegir modalidad en recepción" aria-controls="service-menu" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M4 20V10h16v10M8 10V6h8v4M10 6V3h4v3M8 14h8" /></svg><span>Recepción</span>
+      </button>
+      <span class="tool-divider" aria-hidden="true"></span>
       <button id="walk-button" class="tool-button" type="button" title="Recorrer el local en primera persona">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="4" r="2" /><path d="m9 22 3-7m5 7-2-7-3-4 1-4m-6 7 2-5 4-2 4 4 3 1" /></svg><span>Recorrer</span>
       </button>
@@ -61,7 +65,7 @@
       </div>
       <button id="enter-button" class="enter-button" type="button">Recorrer el local <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
       <p class="welcome-note"><kbd>Esc</kbd> libera el mouse. Podés volver a entrar cuando quieras.</p>
-      <div class="milestone-note"><strong>01 / Espacio y movimiento</strong><span>El guion de diseño e impresión se suma en el próximo hito.</span></div>
+      <div class="milestone-note"><strong>02 / Diseño con asistencia</strong><span>Elegí una modalidad en Recepción para seguir la guía hasta preparar la pieza.</span></div>
       <p class="mobile-note">Usá una computadora con teclado y mouse para recorrer el local.</p>
     </section>
 
@@ -71,18 +75,68 @@
       <dl>
         <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>o flechas</span></dt><dd>Caminar</dd></div>
         <div><dt>Mouse</dt><dd>Mirar alrededor</dd></div>
+        <div><dt><kbd>E</kbd></dt><dd>Interactuar cerca del objetivo</dd></div>
         <div><dt><kbd>Esc</kbd></dt><dd>Liberar el mouse</dd></div>
         <div><dt><kbd>V</kbd></dt><dd>Alternar vista general</dd></div>
         <div><dt><kbd>R</kbd></dt><dd>Volver a la entrada</dd></div>
         <div><dt><kbd>H</kbd></dt><dd>Ocultar o mostrar interfaz</dd></div>
       </dl>
-      <p>Los muebles y las paredes delimitan el recorrido. Los baños y el depósito quedan fuera de la visita.</p>
+      <p>Acercate al lugar indicado y presioná E para avanzar. Usá Recepción para elegir una modalidad. Los baños y el depósito quedan fuera de la visita.</p>
     </aside>
+
+    <section id="service-menu" class="service-menu" role="dialog" aria-modal="true" aria-labelledby="service-menu-title" aria-describedby="service-menu-description" hidden>
+      <div class="service-dialog">
+        <p class="eyebrow"><span></span> Recepción · ProtoAlquiler 3D</p>
+        <h2 id="service-menu-title">¿Cómo querés crear tu pieza?</h2>
+        <p id="service-menu-description" class="service-intro">Elegí una modalidad. Podés recorrer el local y volver a recepción cuando quieras.</p>
+        <div class="service-options">
+          <button class="service-card service-card-available" type="button" data-mode="assisted">
+            <span class="service-card-top"><span class="service-number">01</span><span class="service-availability">Disponible</span></span>
+            <span class="service-card-title">Necesito ayuda para diseñar e imprimir</span>
+            <span class="service-card-description">Traé una idea. El técnico te acompaña paso a paso en la estación.</span>
+            <span class="service-card-action">Empezar con asistencia <span aria-hidden="true">↗</span></span>
+          </button>
+          <button class="service-card" type="button" data-mode="autonomous" disabled aria-describedby="autonomous-pending">
+            <span class="service-card-top"><span class="service-number">02</span><span id="autonomous-pending" class="service-availability">Próximamente</span></span>
+            <span class="service-card-title">Quiero diseñar e imprimir por mi cuenta</span>
+            <span class="service-card-description">Prepará tu proyecto con autonomía y revisión técnica antes de imprimir.</span>
+            <span class="service-card-action">Diseño autónomo</span>
+          </button>
+          <button class="service-card" type="button" data-mode="order" disabled aria-describedby="order-pending">
+            <span class="service-card-top"><span class="service-number">03</span><span id="order-pending" class="service-availability">Próximamente</span></span>
+            <span class="service-card-title">Quiero encargar una pieza y retirarla después</span>
+            <span class="service-card-description">Dejá tus referencias. El equipo del local modela y prepara el trabajo.</span>
+            <span class="service-card-action">Modelado e impresión por encargo</span>
+          </button>
+        </div>
+        <div class="service-menu-footer"><p>En este hito, el recorrido asistido llega hasta la preparación.<br />La revisión técnica y la impresión se suman después.</p><button id="menu-explore" type="button">Solo recorrer <span aria-hidden="true">→</span></button></div>
+      </div>
+    </section>
+
+    <aside id="flow-guide" class="flow-guide" aria-labelledby="flow-title" hidden>
+      <div class="flow-guide-heading"><p id="flow-step-label" class="eyebrow">Diseño con asistencia</p><button id="flow-dismiss" class="flow-text-button" type="button" title="Dejar la guía y explorar el local">Explorar sin guía</button></div>
+      <ol id="flow-progress" class="flow-progress" aria-label="Pasos del recorrido asistido">
+        <li data-step="reception"><span>1</span><small>Recepción</small></li>
+        <li data-step="station"><span>2</span><small>Estación</small></li>
+        <li data-step="design-base"><span>3</span><small>Base</small></li>
+        <li data-step="design-detail"><span>4</span><small>Detalle</small></li>
+        <li data-step="preparation"><span>5</span><small>Preparar</small></li>
+        <li data-step="ready"><span>6</span><small>Lista</small></li>
+      </ol>
+      <h2 id="flow-title">Tu idea empieza acá.</h2>
+      <p id="flow-description" class="flow-description"></p>
+      <div id="flow-detail" class="flow-detail"></div>
+      <p id="flow-location" class="flow-location"></p>
+      <button id="flow-action" class="enter-button flow-action" type="button" disabled>Acercate a recepción</button>
+      <div class="flow-guide-footer"><span><kbd>E</kbd> Interactuar · <kbd>Esc</kbd> usar el panel</span><button id="flow-restart" class="flow-text-button" type="button">Reiniciar recorrido</button></div>
+    </aside>
+
+    <p id="interaction-hint" class="interaction-hint" role="status" aria-live="polite" hidden></p>
 
     <div id="crosshair" class="crosshair" aria-hidden="true" hidden></div>
     <p id="status-message" class="status-message" role="status" aria-live="polite" hidden></p>
 
-    <footer id="controls-hint" class="controls-hint"><span><kbd>V</kbd> Vista general</span><span><kbd>R</kbd> Entrada</span><span><kbd>H</kbd> Ocultar interfaz</span></footer>
+    <footer id="controls-hint" class="controls-hint"><span><kbd>E</kbd> Interactuar</span><span><kbd>V</kbd> Vista general</span><span><kbd>R</kbd> Entrada</span><span><kbd>H</kbd> Ocultar interfaz</span></footer>
 
     <div id="loading" class="loading" role="status"><span class="loading-mark" aria-hidden="true"></span><span>Preparando el local<span class="loading-dots">…</span></span></div>
     <section id="error-panel" class="error-panel" role="alert" hidden>

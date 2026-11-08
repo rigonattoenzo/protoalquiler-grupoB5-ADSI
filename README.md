@@ -18,7 +18,26 @@ Esta entrega sigue el pedido de avanzar por hitos. Incluye:
 
 Los muebles son primitivas de colores planos. Los carteles se dibujan localmente en canvas. No se usan modelos ni texturas externas.
 
-**Todavía no están implementados los recorridos comerciales**: recepción interactiva, elección de modalidad, diseño preparado, revisión, presupuesto, impresión acelerada y resumen corresponden a los siguientes hitos. Caminar no inicia procesos ni modifica consumos.
+## Hito 2 — Inicio del recorrido asistido
+
+El menú inicial muestra las tres modalidades del proyecto. **Diseño con asistencia** está disponible; diseño autónomo y encargo se identifican como próximos recorridos.
+
+El tutorial implementado llega desde recepción hasta dejar el trabajo preparado:
+
+1. Elegir **Necesito ayuda para diseñar e imprimir**.
+2. En recepción, presentar la referencia precargada: un soporte para celular.
+3. Rodear el mostrador por su derecha y acercarse a la computadora de E1, señalada con un marcador verde.
+4. Abrir la computadora y seguir los dos pasos guiados: crear la base y agregar el apoyo. El modelo aparece progresivamente sobre la mesa.
+5. Revisar las estimaciones simuladas de material y uso, y preparar el trabajo.
+6. Llegar a **Preparación lista**. Esta es la última etapa habilitada en esta iteración.
+
+Usá **E** para interactuar cerca del lugar indicado. También podés liberar el mouse con **Esc** y usar el botón del tutorial. La guía permanece visible mientras explorás y no obliga a seguir un camino físico único.
+
+**Todavía faltan revisión técnica, presupuesto, confirmación del material, suministro de bobina, impresión acelerada y cierre.** La pieza sobre la mesa representa el modelo de demostración: no hay una pieza impresa en la cama de la máquina. Caminar no avanza pasos ni modifica consumos.
+
+El técnico adopta una posición preparada junto a E1 al comenzar el diseño y orienta mediante textos guionados. Su desplazamiento animado queda para otra iteración.
+
+Para repetir, usá **Reiniciar tutorial**: restaura referencia, modelo, técnico y posición de entrada. **Explorar sin guía** cancela el tutorial y vuelve a la exploración. El botón superior **Recepción** permite volver al menú de modalidades; al seleccionar de nuevo el asistido se prepara una toma nueva desde la entrada.
 
 ## Abrir con Live Server
 
@@ -47,12 +66,13 @@ Abrí la dirección que imprime la consola (normalmente `http://127.0.0.1:5500`)
 | Esc | Liberar el mouse y pausar el movimiento |
 | V | Alternar vista general y recorrido; conserva la posición |
 | R | Volver a la entrada y mirar hacia recepción |
+| E | Consultar recepción o ejecutar el paso de tutorial cerca de su destino |
 | H | Ocultar o mostrar la interfaz |
 | Botones superiores | Recorrer, vista general, entrada y ayuda |
 
 Desde la entrada, rodeá el mostrador **por su derecha** para acceder al pasillo y a E1, E2 y E3. El pequeño umbral del acceso permite salir un paso; el exterior completo queda fuera de este hito.
 
-El cliente está representado por la cámara al caminar y por una figura azul en la vista general. El técnico es la figura verde. Los dos están construidos con primitivas, sin animaciones de trabajo todavía.
+El cliente está representado por la cámara al caminar y por una figura azul en la vista general. El técnico es la figura verde. Los dos están construidos con primitivas. **R** solo reinicia la cámara; no reinicia el proceso. Para eso está **Reiniciar tutorial**.
 
 Para una toma limpia: entrá al recorrido y pulsá `H`. Pulsá `H` otra vez para recuperar la interfaz. Al volver de la vista general, el navegador puede requerir un nuevo clic en **Recorrer** para capturar el mouse.
 
@@ -69,6 +89,10 @@ src/
   navigation.js            WASD, Pointer Lock y movimiento de cámara
   look.js                  Filtro y actualización suave de la mirada
   physics.js               Colisión círculo/AABB y apoyo sobre el piso
+  workflow.js              Modalidades, etapas, estado y datos de demostración
+  workflow-targets.js      Destinos y condiciones de proximidad
+  workflow-ui.js           Menú y guía del recorrido asistido
+  workflow-scene.js        Pieza progresiva, destino y técnico en E1
 scripts/
   serve.mjs                Servidor local opcional sin dependencias
   check.mjs                Comprobación de sintaxis y archivos
@@ -78,6 +102,8 @@ docs/                      Referencias y registro de validación
 ```
 
 Las proporciones de `src/config.js` y `src/world.js` son unidades de escena elegidas para el recorrido. **No son medidas arquitectónicas reales ni una declaración de superficie**. Se siguió el plano conceptual de tres estaciones, acceso único y recepción frontal. Se consultó completo el documento recibido `Contexto_Codex_ProtoAlquiler_3D.md`; el nombre `Contexto_Codex_Prototipo.md` mencionado en el pedido no estaba presente.
+
+`DEMO` en `src/workflow.js` reúne la pieza, material, color, gramos y minutos del caso: soporte para celular, PLA verde, **25 g incluidos auxiliares** y **90 minutos de uso representado**. Son datos ilustrativos precargados: no se calculan con CAD, laminador ni tiempo real del paseo. En esta iteración no se calculan ni cobran importes.
 
 Para simplificar este hito, las cajas de colisión se calculan una sola vez a partir de los volúmenes sólidos. El jugador es un círculo en XZ con altura de cámara fija; usa subpasos para evitar atravesar paredes y se desliza al tocar un obstáculo. La vista general cambia la cámara y la visibilidad de paredes; no cambia las colisiones del recorrido.
 
@@ -105,13 +131,12 @@ Para cerrar la revisión visual en tu computadora:
 
 ## Hitos siguientes
 
-Antes de ampliar el recorrido: ajustar la sensibilidad de la mirada según la preferencia del equipo. El usuario confirmó las correcciones de habitaciones y giros bruscos, y pidió posponer ese ajuste fino para otra iteración.
+Pendiente de refinamiento: ajustar la sensibilidad de la mirada según la preferencia del equipo. El usuario confirmó las correcciones de habitaciones y giros bruscos, y pidió posponer ese ajuste fino.
 
-1. **Recepción y recorrido asistido:** estado centralizado, modalidad, E1, referencia precargada, diseño y preparación guionados.
-2. **Revisión e impresión:** intervención del técnico, confirmación del material, presupuesto ilustrativo, impresión acelerada y resumen repetible.
-3. **Reutilización y grabación:** modalidad autónoma y encargo, salto de escenas y cámaras preparadas.
+1. **Revisión e impresión:** revisión del técnico, presupuesto ilustrativo, confirmación del material, suministro de bobina, impresión acelerada y resumen repetible.
+2. **Reutilización y grabación:** modalidad autónoma y encargo, salto de escenas y cámaras preparadas.
 
-Los futuros datos de tiempo, gramos y tarifas serán ilustrativos y configurables. Este hito no introduce precios comerciales ni modifica las decisiones del emprendimiento.
+Las futuras tarifas también serán ilustrativas y configurables. El tutorial actual no introduce precios comerciales ni modifica las decisiones del emprendimiento.
 
 ## Subir a GitHub por primera vez
 
