@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#172c35" />
+    <meta name="description" content="Recorrido del local de ProtoAlquiler 3D. Hito 01: espacio, iluminación y movimiento." />
+    <title>ProtoAlquiler 3D | Hito 01</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23172c35'/%3E%3Cpath d='M32 12 50 22v20L32 52 14 42V22Zm0 0v20m18-10L32 32 14 22m18 10v20' fill='none' stroke='%238ed8bd' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <main id="scene" aria-label="Escenario 3D del local de ProtoAlquiler"></main>
+
+    <header id="hud" class="hud">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 36" fill="none"><path d="m16 2 14 8v16l-14 8L2 26V10L16 2Z" /><path d="m2 10 14 8 14-8M16 18v16M16 2v16" /></svg>
+        </span>
+        <div class="brand-name">ProtoAlquiler <span>3D</span><small>Diseñar. Preparar. Crear.</small></div>
+      </div>
+      <div class="scene-state">
+        <span class="milestone"><span class="state-dot" aria-hidden="true"></span> Hito 01</span>
+        <span class="state-divider" aria-hidden="true"></span>
+        <div class="view-state"><span id="view-label">Recorrido libre</span><span id="zone-label">Acceso · recepción</span></div>
+      </div>
+    </header>
+
+    <nav id="toolbar" class="toolbar" aria-label="Controles del recorrido">
+      <button id="walk-button" class="tool-button" type="button" title="Recorrer el local en primera persona">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="4" r="2" /><path d="m9 22 3-7m5 7-2-7-3-4 1-4m-6 7 2-5 4-2 4 4 3 1" /></svg><span>Recorrer</span>
+      </button>
+      <button id="overview-button" class="tool-button" type="button" title="Vista general del local (V)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5" /></svg><span>Vista general</span><kbd>V</kbd>
+      </button>
+      <span class="tool-divider" aria-hidden="true"></span>
+      <button id="reset-button" class="tool-button" type="button" title="Volver a la entrada (R)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 1 1 0 7M4 3v6h6" /></svg><span>Entrada</span><kbd>R</kbd>
+      </button>
+      <button id="help-button" class="tool-button tool-button-help" type="button" title="Mostrar u ocultar los controles" aria-controls="help-panel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 8a2.5 2.5 0 1 1 4.3 1.7c-1.3.8-1.8 1.3-1.8 2.8M12 16h.01" /></svg><span>Ayuda</span>
+      </button>
+    </nav>
+
+    <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+      <p class="eyebrow"><span></span> El local, por dentro</p>
+      <h1 id="welcome-title">Bienvenido a<br />ProtoAlquiler<span> 3D.</span></h1>
+      <p class="welcome-description">Un espacio para diseñar e imprimir. Recorré la recepción, conocé las estaciones y encontrá al técnico.</p>
+      <div class="welcome-controls" aria-label="Controles principales">
+        <span><span class="key-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> Caminar</span>
+        <span><svg viewBox="0 0 18 22" aria-hidden="true"><rect x="3" y="1" width="12" height="20" rx="6" /><path d="M9 1v7" /></svg> Mirar</span>
+      </div>
+      <button id="enter-button" class="enter-button" type="button">Recorrer el local <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
+      <p class="welcome-note"><kbd>Esc</kbd> libera el mouse. Podés volver a entrar cuando quieras.</p>
+      <div class="milestone-note"><strong>01 / Espacio y movimiento</strong><span>El guion de diseño e impresión se suma en el próximo hito.</span></div>
+      <p class="mobile-note">Usá una computadora con teclado y mouse para recorrer el local.</p>
+    </section>
+
+    <aside id="help-panel" class="help-panel" aria-labelledby="help-title" hidden>
+      <p class="eyebrow">Controles</p>
+      <h2 id="help-title">Movete a tu ritmo.</h2>
+      <dl>
+        <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>o flechas</span></dt><dd>Caminar</dd></div>
+        <div><dt>Mouse</dt><dd>Mirar alrededor</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Liberar el mouse</dd></div>
+        <div><dt><kbd>V</kbd></dt><dd>Alternar vista general</dd></div>
+        <div><dt><kbd>R</kbd></dt><dd>Volver a la entrada</dd></div>
+        <div><dt><kbd>H</kbd></dt><dd>Ocultar o mostrar interfaz</dd></div>
+      </dl>
+      <p>Los muebles y las paredes delimitan el recorrido. Los baños y el depósito quedan fuera de la visita.</p>
+    </aside>
+
+    <div id="crosshair" class="crosshair" aria-hidden="true" hidden></div>
+    <p id="status-message" class="status-message" role="status" aria-live="polite" hidden></p>
+
+    <footer id="controls-hint" class="controls-hint"><span><kbd>V</kbd> Vista general</span><span><kbd>R</kbd> Entrada</span><span><kbd>H</kbd> Ocultar interfaz</span></footer>
+
+    <div id="loading" class="loading" role="status"><span class="loading-mark" aria-hidden="true"></span><span>Preparando el local<span class="loading-dots">…</span></span></div>
+    <section id="error-panel" class="error-panel" role="alert" hidden>
+      <p class="eyebrow">No pudimos abrir el local</p>
+      <h2>Revisemos la conexión.</h2>
+      <p id="error-detail">Abrí este proyecto con Live Server en un navegador compatible con WebGL 2.</p>
+      <button type="button" onclick="location.reload()">Volver a intentar</button>
+    </section>
+    <noscript><p class="noscript">Activá JavaScript para recorrer ProtoAlquiler 3D.</p></noscript>
+  </body>
+</html>

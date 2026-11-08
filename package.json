@@ -1,0 +1,13 @@
+{
+  "name": "protoalquiler-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Simulación interna de ProtoAlquiler 3D — hito 1: espacio y navegación.",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

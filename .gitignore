@@ -1,0 +1,12 @@
+# Material de consulta y archivos locales; no forman parte de la aplicación.
+.reference/
+.artifacts/
+node_modules/
+*.zip
+*.rar
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
