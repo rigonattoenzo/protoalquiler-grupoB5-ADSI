@@ -67,23 +67,30 @@ export function createWorkflowScene({ scene, world, camera }) {
   (camera || root).add(bag); bag.position.set(0.42, -0.38, -0.85); bag.rotation.y = -0.12;
   bag.visible = false; avatarBag.visible = false;
   const patrol = [{ x: -1.1, z: 3.8 }, { x: 0.35, z: 3.8 }, { x: 0.35, z: -3.5 }, { x: -2.9, z: -3.5 }, { x: -2.9, z: 3.8 }];
+  const orderMeeting = { x: CONFIG.reception.x + 0.9, z: CONFIG.reception.z + 1.5 };
   let patrolIndex = 1, route = [], called = false, elapsed = 0, wait = 0, lastStep = 'idle', materialPhase = 'idle', phaseClock = 0, materialReady = false;
   let state = { mode: null, stepId: 'idle', stepIndex: -1, progress: 0 };
-  const monitors = [...world.screens].map(([id, screen]) => createMonitorDisplay(screen, { occupied: id !== 'E1' }));
+  const monitors = [...world.screens].map(([id, screen]) => createMonitorDisplay(screen, { occupied: id === 'E2', station: id }));
   function syncCollider() { Object.assign(technicianCollider, { minX: technician.position.x - 0.3, maxX: technician.position.x + 0.3, minZ: technician.position.z - 0.3, maxZ: technician.position.z + 0.3 }); }
   function planHelp() {
     const p = technician.position;
     // Primero vuelve al corredor; después rodea las sillas por su frente.
     route = [{ x: 0.35, z: p.z }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: CONFIG.workstation.assistant.x, z: CONFIG.workstation.approachZ }, { ...CONFIG.workstation.assistant }];
   }
+  function planOrderReception() {
+    route = [{ x: 0.35, z: technician.position.z }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: -2.8, z: CONFIG.workstation.approachZ }, { x: -2.8, z: orderMeeting.z }, { ...orderMeeting }];
+    wait = 0;
+  }
   function applyState(next) {
     state = next;
     if (next.assistantCalled && !called) {
-      if (next.mode === 'order') { route = []; wait = 0; } else planHelp();
+      if (next.mode === 'order') planOrderReception(); else planHelp();
     }
     if (!next.assistantCalled && called) {
       // Sale por el frente de la silla antes de retomar el corredor.
-      route = [{ x: technician.position.x, z: CONFIG.workstation.approachZ }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: 0.35, z: 3.8 }];
+      route = next.mode === 'order'
+        ? [{ x: -2.8, z: technician.position.z }, { x: -2.8, z: CONFIG.workstation.approachZ }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: 0.35, z: 3.8 }]
+        : [{ x: technician.position.x, z: CONFIG.workstation.approachZ }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: 0.35, z: 3.8 }];
       patrolIndex = 1;
     }
     called = Boolean(next.assistantCalled);
@@ -159,7 +166,7 @@ export function createWorkflowScene({ scene, world, camera }) {
     const atReception = !definition || definition.target === 'reception';
     const atExit = definition?.target === 'exit';
     const atTechnician = definition?.target === 'technician';
-    marker.position.set(atTechnician ? technician.position.x : atExit ? -4.7 : atReception ? CONFIG.reception.x : CONFIG.workstation.center.x, 0.045, atTechnician ? technician.position.z : atExit ? CONFIG.room.front + 0.5 : atReception ? CONFIG.reception.z + 1.15 : CONFIG.workstation.center.z);
+    marker.position.set(atTechnician ? orderMeeting.x : atExit ? -4.7 : atReception ? CONFIG.reception.x : CONFIG.workstation.center.x, 0.045, atTechnician ? orderMeeting.z : atExit ? CONFIG.room.front + 0.5 : atReception ? CONFIG.reception.z + 1.15 : CONFIG.workstation.center.z);
     marker.scale.set(atTechnician ? 2 : atReception || atExit ? 1 : 7.5, atTechnician ? 2 : atReception || atExit ? 1 : 2.2, 1);
     marker.material.opacity = 0.55 + Math.sin(elapsed * 2) * 0.1;
     const basePrinting = state.stepId === 'printing-base', backPrinting = state.stepId === 'printing-detail';
@@ -206,6 +213,8 @@ export function createWorkflowScene({ scene, world, camera }) {
   }
   return {
     applyState, update,
+    setOrderMeeting(position) { orderMeeting.x = position.x + 0.9; orderMeeting.z = THREE.MathUtils.clamp(position.z + 0.35, 6.15, 6.65); },
+    get orderMeetingPoint() { return orderMeeting; },
     get assistantReady() { return called && route.length === 0; },
     get materialReady() { return materialReady; },
     get materialStatus() { return materialPhase; },

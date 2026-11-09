@@ -58,7 +58,7 @@ export const AUTONOMOUS_STEPS = Object.freeze([
 ].map(Object.freeze));
 
 export const ORDER_STEPS = Object.freeze([
-  { id: 'order-brief', title: 'Hablá con el técnico', speaker: 'receptionist', target: 'technician', action: 'Hablar y entregar referencias', dialogue: 'Para el encargo hablá directamente con nuestro técnico. Mostrale los planos, las medidas o las referencias de tu idea; él te prepara una estimación.' },
+  { id: 'order-brief', title: 'Esperá al técnico en recepción', speaker: 'receptionist', target: 'technician', action: 'Hablar y entregar referencias', dialogue: 'Nuestro técnico se acerca a recepción para conversar con vos. Mostrale los planos, las medidas o las referencias de tu idea; él te prepara una estimación.', needsAssistant: true },
   { id: 'order-estimate', title: 'Referencias y estimación', speaker: 'technician', target: 'technician', action: 'Aceptar estimación y abonar anticipo', dialogue: 'Con estas referencias puedo diseñar el soporte. Estimo ' + money(ORDER.estimate) + ' por el trabajo completo, con un anticipo de ' + money(ORDER.deposit) + '. Te enviamos el diseño y el presupuesto final para que autorices la impresión.' },
   { id: 'order-leave', title: 'Salí del local', speaker: 'technician', target: 'exit', action: '', dialogue: 'Recibí las referencias y el anticipo. Ya podés retirarte; te escribimos cuando esté terminado el diseño. La impresión espera tu autorización.' },
   { id: 'order-design', title: 'El equipo prepara tu diseño', speaker: 'technician', target: 'remote', action: '', automatic: true, seconds: ORDER.designSeconds, dialogue: '' },
@@ -82,7 +82,7 @@ function stateAt(mode, stepIndex, progress = 0) {
     orderApproved: at('order-next-day'), orderDeferred: false,
     orderAway: ['order-design', 'order-approval', 'order-next-day'].includes(stepId),
     designLevel: at('order-approval') ? 2 : 0, prepared: at('order-approval'), confirmed: at('order-next-day'),
-    assistantCalled: stepId === 'order-estimate', materialLoaded: at('order-pickup'),
+    assistantCalled: ['order-brief', 'order-estimate'].includes(stepId), materialLoaded: at('order-pickup'),
     basePrinted: at('order-pickup'), backPrinted: at('order-pickup'),
     baseOnTable: at('order-pickup'), backOnTable: at('order-pickup'), assembled: at('order-pickup'),
     hasBag: at('exit'), complete: at('complete'),

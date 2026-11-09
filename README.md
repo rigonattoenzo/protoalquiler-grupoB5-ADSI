@@ -49,12 +49,12 @@ También tiene **9 confirmaciones con E** después de elegir modalidad. Usa los 
 
 ## Recorrido por encargo completo
 
-1. Conversá con recepción y elegí **3: Por encargo**. Seguí el indicador hasta el técnico, donde se encuentre.
-2. Con E le entregás las referencias del soporte. Se ve la hoja con el dibujo pasando a sus manos; el técnico se queda para atenderte.
+1. Conversá con recepción y elegí **3: Por encargo**. Esperá junto al mostrador: el técnico lo rodea y se acerca a vos, sin que tengas que buscarlo por el local.
+2. Cuando llega, E le entrega las referencias del soporte. Se ve la hoja con el dibujo pasando a sus manos; el técnico se queda para atenderte.
 3. Aceptá la estimación de **$15.000** y aboná **$5.000 de anticipo** con E. Estos valores del guion fueron elegidos por el grupo y se configuran en `ORDER`.
 4. Salí por el acceso. La primera salida no termina la historia: abre una pantalla negra y un salto de unas horas mientras el equipo prepara el diseño.
-5. Aparece un mensaje con el soporte, presupuesto final de $15.000, anticipo de $5.000 y saldo de **$10.000**. Elegí **Sí, autorizar impresión**. **Todavía no** deja el pedido en espera, sin imprimir ni avanzar al retiro; podés autorizar después.
-6. El mensaje confirma que podés retirar mañana. Pulsá **Ir a retirar · Al día siguiente** cuando termines de leer o grabar; volvés a aparecer en la entrada del local.
+5. Aparece un teléfono con un chat de ProtoAlquiler: mensajes recibidos con el diseño, presupuesto final de $15.000, anticipo de $5.000 y saldo de **$10.000**. Elegí **Sí, imprimilo**. Tu respuesta aparece a la derecha. **Todavía no** deja el pedido en espera, sin imprimir ni avanzar al retiro; podés autorizar después.
+6. El técnico responde en el mismo chat que podés retirar mañana. Se conserva la conversación, incluidas las respuestas previas. Pulsá **Ir a retirar · Al día siguiente** cuando termines de leer o grabar; volvés a aparecer en la entrada del local.
 7. Acercate al mostrador: el soporte ensamblado está sobre él. E abona el saldo y te entrega la bolsa.
 8. Salí nuevamente para cerrar el recorrido. Reiniciar restaura referencias, anticipo, aprobación, pieza y bolsa.
 
@@ -88,13 +88,14 @@ La búsqueda del filamento respeta los muebles y al jugador. Si se bloquea al t�
 ## Local y personajes
 
 - Acceso único, recepción frontal contra la pared izquierda: mostrador de 4,16 unidades, apenas más largo que el ancho de un baño. Conserva 1,2 unidades detrás para el personal.
-- Recepción sentada en una silla de oficina, computadora orientada al personal, teclado, mouse, una hoja con las tres modalidades y portalapiceras.
+- Recepción sentada en una silla de oficina, computadora orientada al personal, teclado, mouse, una hoja con las tres modalidades y portalapiceras. El cuerpo del mostrador y su base están separados: zócalo negro retraído para evitar caras superpuestas.
 - Tres estaciones contra la pared derecha, la última junto al fondo. Separación mayor entre puestos y menos espacio vacío hacia la vidriera.
 - Habitaciones continuas del piso al techo: desde el fondo hacia recepción, baño de mujeres, baño de hombres y depósito. Juntas y cornisas en tono madera separan los ambientes y marcan la unión con el techo. Interiores fuera del recorrido.
 - Puertas con pictogramas de mujer, hombre y caja; se retiró la leyenda “Individual”.
 - Armario de vidrio contra el fondo, entre el baño de mujeres y E3, con espacio libre junto a la puerta.
 - Sillas de oficina con brazos, columna, base de cinco radios y ruedas. Las libres de E1/E3 están centradas entre PC e impresora y permiten sentarse; no se empujan ni arrastran.
 - Una persona trabaja sentada en E2. Es parte del caso ilustrativo, no una medición de ocupación.
+- E2 muestra un proyecto propio de electrónica: carcasa de sensor con tapa ventilada y soportes para una placa, independiente del proyecto del cliente. E3 muestra “Sin proyecto abierto”; E1 conserva las pantallas del recorrido.
 - El técnico recorre puntos de paso mientras no está solicitado. Al llamarlo va a E1 por el pasillo, respeta colisiones y se queda hasta terminar el trabajo.
 - Seis figuras en la vidriera, logo elevado y tarifario de alto contraste en la pared derecha **entre E2 y E3**, fuera del ancho de sus impresoras.
 - Restaurado el panel “Hecho acá” detrás de recepción, conservando el cuadro lateral con la marca e impresora. Los cinco cuadros del pasillo/puestos tienen motivos diferentes: hoja, lámpara, cohete, engranajes y soporte para teléfono; las palabras del pasillo son “Inspirá”, “Imaginá” y “Probá”.
@@ -131,7 +132,7 @@ Por pedido del grupo, esos avisos se conservan en la documentación técnica y n
 
 Se consultaron los ejemplos de la materia, incluido 6.2 de rendimiento. La escena reutiliza materiales y geometrías, agrupa mobiliario estático con `InstancedMesh`, calcula sus colisiones una vez y mantiene animaciones por tiempo transcurrido. El mobiliario agrupado conserva objetos lógicos para límites y pruebas.
 
-`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. El damero del piso usa una textura repetida de 512×512 y las alfombras, texturas de 256×128, generadas una sola vez en canvas. Durante la pantalla negra del encargo no se redibuja WebGL; el guion sigue actualizando su estado. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
+`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz, E2 a 2 Hz y E3 se dibuja una sola vez. El damero del piso usa una textura repetida de 512×512 y las alfombras, texturas de 256×128, generadas una sola vez en canvas. Durante el chat telefónico del encargo no se redibuja WebGL; el guion sigue actualizando su estado. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
 
 Con **F2** se pueden comparar FPS y costo de dibujo en la computadora de grabación. Todavía hay que comprobar el rendimiento real con el grabador abierto; las pruebas de Node no miden la GPU ni garantizan FPS.
 
@@ -150,7 +151,7 @@ src/workflow-targets.js   Proximidad y condiciones de interacción
 src/workflow-scene.js     Técnico, impresión, traslado y ensamblado
 src/monitor.js            Pantalla de CAD/slicer simulada
 src/workflow-ui.js        Globos de diálogo, opciones y objetivo discreto
-src/order-ui.js           Mensaje del encargo, autorización y salto al retiro
+src/order-ui.js           Chat telefónico, respuestas y salto al retiro
 src/main.js               Coordinación, render, controles y diagnóstico
 tests/                    Pruebas de física, flujo e integración sin GPU
 vendor/three/             Dependencia oficial local con licencia MIT
@@ -164,7 +165,7 @@ npm test
 
 Las pruebas cubren los tres recorridos completos, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, referencias, anticipo, espera sin autorización, regreso/retirada, técnico y colisiones, sentarse/levantarse, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Ver [estado de la iteración actual](docs/estado-hito-7.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
+Ver [estado de la iteración actual](docs/estado-hito-8.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
 ## GitHub y próximos pasos
 

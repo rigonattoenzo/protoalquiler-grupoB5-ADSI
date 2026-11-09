@@ -6,7 +6,7 @@ import { moveCircle, overlapsCircle } from '../src/physics.js';
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, a + ' != ' + b);
 
 test('entrada única, recepción accesible y espacio justo para el personal', async () => {
-  const { world } = await worldFixture(), { reception, room, navigation } = CONFIG;
+  const { world, scene } = await worldFixture(), { reception, room, navigation } = CONFIG;
   assert.ok(world.colliders.every(box => !overlapsCircle(navigation.spawn, navigation.radius, box)));
   const desk = world.colliders.find(box => box.id === 'Mostrador recepción');
   const wall = world.colliders.find(box => box.id === 'Pared izquierda');
@@ -16,6 +16,9 @@ test('entrada única, recepción accesible y espacio justo para el personal', as
   const clearance = desk.minZ - storage.maxZ;
   assert.ok(clearance >= 1.1 && clearance <= 1.3);
   assert.ok(reception.staffZ - 0.3 > storage.maxZ && reception.staffZ + 0.3 < desk.minZ);
+  const body = new THREE.Box3().setFromObject(scene.getObjectByName('Mostrador recepción'));
+  const plinth = new THREE.Box3().setFromObject(scene.getObjectByName('Zócalo recepción'));
+  near(body.min.y, plinth.max.y); assert.ok(plinth.max.z < body.max.z, 'El zócalo negro queda retraído y no comparte la cara frontal marrón');
   for (const x of [-7, -4.7, -2.7, 0, 6]) {
     const end = moveCircle({ x, z: room.front - 0.5 }, { x: 0, z: 2 }, navigation.radius, world.colliders);
     assert.equal(end.z > room.front + 0.3, x === -4.7);

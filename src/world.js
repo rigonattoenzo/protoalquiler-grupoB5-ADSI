@@ -94,9 +94,9 @@ export function createWorld(scene) {
   });
   box('Cornisa frente depósito', [3.925, 0.095, 0.065], [-6.0375, room.height - 0.0475, 2.9125], colors.trim);
 
-  box('Mostrador recepción', [reception.width, 1.02, reception.depth], [reception.x, 0.51, reception.z], colors.blue, { solid: true });
+  box('Mostrador recepción', [reception.width, 0.92, reception.depth], [reception.x, 0.56, reception.z], colors.blue, { solid: true });
   box('Tapa recepción', [reception.width + 0.12, 0.11, reception.depth + 0.12], [reception.x, 1.06, reception.z], colors.wood);
-  box('Zócalo recepción', [reception.width - 0.2, 0.1, reception.depth], [reception.x, 0.05, reception.z], colors.ink);
+  box('Zócalo recepción', [reception.width - 0.2, 0.1, reception.depth - 0.12], [reception.x, 0.05, reception.z], colors.ink);
   sign('PROTOALQUILER / RECEPCIÓN', { x: reception.x, y: 0.65, z: reception.z + reception.depth / 2 + 0.01, width: 3.4, height: 0.3, background: '#bd8b73', fontSize: 55 });
   [0.25, 0.45, 0.85].forEach(y => box('Listón recepción', [reception.width - 0.16, 0.022, 0.025], [reception.x, y, reception.z + reception.depth / 2 + 0.015], colors.wood));
   // La pantalla y el teclado miran al personal, al otro lado del mostrador.

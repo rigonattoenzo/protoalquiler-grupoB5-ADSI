@@ -120,9 +120,11 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
 
   // Encargo: referencias visibles, anticipo único, autorización remota y retiro.
   renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1);
-  press('KeyE'); press('Digit3'); assert.match(elements.get('flow-title').textContent, /Hablá con el técnico/);
+  press('KeyE'); press('Digit3'); assert.match(elements.get('flow-title').textContent, /técnico en recepción/);
   const tech = renderer.scene.getObjectByName('Técnico');
-  renderer.camera.position.set(tech.position.x + 1.1, 1.65, tech.position.z + 0.2);
+  press('KeyE'); assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, false, 'Espera a que el técnico llegue');
+  frames(900);
+  assert.ok(Math.hypot(tech.position.x - renderer.camera.position.x, tech.position.z - renderer.camera.position.z) < 1.65, 'El técnico viene al cliente, que no se movió');
   press('KeyE'); frames(70);
   assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, true);
   assert.match(elements.get('quote-detail').innerHTML, /15\.000/); assert.match(elements.get('quote-detail').innerHTML, /5\.000/);
@@ -133,11 +135,12 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   assert.equal(elements.get('order-screen').hidden, false); assert.equal(elements.get('end-screen').hidden, true);
   assert.equal(elements.get('toolbar').inert, true);
   const outside = renderer.camera.position.clone(); press('KeyR'); press('KeyV'); assert.ok(renderer.camera.position.equals(outside));
-  frames(180); assert.match(elements.get('order-title').textContent, /Terminamos tu diseño/);
+  frames(180); assert.equal(elements.get('order-phone').hidden, false); assert.match(html, /id="order-title">ProtoAlquiler/); assert.match(elements.get('order-text').textContent, /Terminamos tu diseño/);
   assert.equal(elements.get('order-approve').focused, true); assert.equal(elements.get('order-decisions').hidden, false);
   elements.get('order-defer').click(); frames(350); assert.equal(elements.get('order-deferred').hidden, false);
-  assert.match(elements.get('order-title').textContent, /Terminamos tu diseño/); assert.equal(elements.get('order-return').hidden, true);
-  elements.get('order-approve').click(); frames(1); assert.match(elements.get('order-title').textContent, /Mañana/);
+  assert.match(elements.get('order-text').textContent, /Terminamos tu diseño/); assert.equal(elements.get('order-return').hidden, true);
+  elements.get('order-approve').click(); frames(1); assert.equal(elements.get('order-confirmed').hidden, false);
+  assert.equal(elements.get('order-approved-reply').hidden, false); assert.equal(elements.get('order-deferred-reply').hidden, false, 'Conserva las respuestas anteriores del chat');
   assert.match(elements.get('order-quote').innerHTML, /10\.000/);
   elements.get('order-return').click(); frames(1);
   assert.equal(elements.get('order-screen').hidden, true); assert.equal(elements.get('toolbar').inert, false);

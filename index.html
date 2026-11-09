@@ -60,20 +60,32 @@
   <p id="status-message" role="status" aria-live="polite" hidden></p>
   <output id="performance-panel" aria-label="Diagnóstico de rendimiento" hidden></output>
   <section id="order-screen" class="order-screen" role="dialog" aria-modal="true" aria-labelledby="order-title" hidden>
-    <div class="order-message">
-      <p id="order-time" class="eyebrow"></p><h2 id="order-title"></h2><p id="order-text"></p>
-      <svg id="order-preview" viewBox="0 0 320 145" role="img" aria-label="Diseño del soporte para celular, base y respaldo encastrados" hidden>
+    <p id="order-transition" class="order-transition">Unas horas después…</p>
+    <div id="order-phone" class="order-phone" hidden>
+      <div class="phone-screen">
+        <div class="phone-status" aria-hidden="true"><span>10:24</span><span>▂▄▆ &nbsp; ▰</span></div>
+        <header class="chat-header"><span class="chat-back" aria-hidden="true">‹</span><span class="chat-avatar" aria-hidden="true">PA</span><div><h2 id="order-title">ProtoAlquiler</h2><small>Taller · diseño e impresión 3D</small></div><span class="chat-menu" aria-hidden="true">⋮</span></header>
+        <div id="order-chat" class="chat-thread" role="log" aria-label="Conversación con ProtoAlquiler" aria-live="polite">
+          <p id="order-time" class="chat-date">Hoy</p>
+          <div class="chat-bubble incoming"><p id="order-text"></p>
+            <svg id="order-preview" viewBox="0 0 320 145" role="img" aria-label="Diseño del soporte para celular, base y respaldo encastrados" hidden>
         <path d="m80 105 105 15 67-28-106-14Z" fill="#95b59c" stroke="#5c8066" stroke-width="2"/>
         <path d="m123 96 15-68 75 11-14 68Z" fill="#bad0b7" stroke="#5c8066" stroke-width="2"/>
         <path d="m124 99 76 11 5-12-77-11Z" fill="#789d81" stroke="#5c8066" stroke-width="2"/>
         <path d="m70 130 180 0" stroke="#dbc7a7" stroke-width="2"/>
-      </svg>
-      <div id="order-quote" hidden></div>
-      <p id="order-deferred" class="order-deferred" role="status" hidden>La impresión queda en espera. No empezamos hasta que la autorices.</p>
-      <div id="order-decisions" class="order-decisions" hidden><button id="order-approve" type="button" class="primary">Sí, autorizar impresión</button><button id="order-defer" type="button">Todavía no</button></div>
-      <button id="order-return" type="button" class="primary" hidden>Ir a retirar · Al día siguiente →</button>
-      <button id="order-restart" type="button" class="order-restart">Reiniciar recorrido</button>
+            </svg><span class="chat-time">10:24</span>
+          </div>
+          <div class="chat-bubble incoming"><p>Te paso el presupuesto del trabajo completo:</p><div id="order-quote" hidden></div><p>¿Querés que lo imprimamos?</p><span class="chat-time">10:24</span></div>
+          <div id="order-deferred-reply" class="chat-bubble outgoing" hidden><p>Todavía no, quiero revisarlo antes.</p><span class="chat-time">10:25 <span aria-label="Leído">✓✓</span></span></div>
+          <div id="order-deferred" class="chat-bubble incoming" hidden><p>Claro, lo dejamos en espera. Avisanos cuando quieras autorizar la impresión.</p><span class="chat-time">10:25</span></div>
+          <div id="order-approved-reply" class="chat-bubble outgoing" hidden><p>¡Sí! Quiero que lo impriman.</p><span class="chat-time">10:26 <span aria-label="Leído">✓✓</span></span></div>
+          <div id="order-confirmed" class="chat-bubble incoming" hidden><p>¡Perfecto! La impresión quedó autorizada. Mañana podés venir a retirar tu soporte en recepción. 😊</p><span class="chat-time">10:26</span></div>
+        </div>
+        <div class="chat-composer"><small id="order-reply-label">Responder</small><div id="order-decisions" class="order-decisions" hidden><button id="order-approve" type="button">Sí, imprimilo <span aria-hidden="true">➤</span></button><button id="order-defer" type="button">Todavía no</button></div><button id="order-return" type="button" class="primary" hidden>Ir a retirar · Al día siguiente →</button></div>
+        <div class="phone-home" aria-hidden="true"></div>
+      </div>
     </div>
+    <button id="order-restart" type="button" class="order-restart">Reiniciar recorrido</button>
   </section>
   <section id="end-screen" class="end-screen" role="dialog" aria-modal="true" aria-labelledby="end-title" hidden>
     <div><p class="eyebrow">ProtoAlquiler 3D</p><h2 id="end-title">Tu idea, hecha realidad.</h2><p>Te llevás tu soporte. Gracias por visitar nuestro taller.</p><button id="end-restart" class="primary" type="button">Volver a recorrer →</button></div>
