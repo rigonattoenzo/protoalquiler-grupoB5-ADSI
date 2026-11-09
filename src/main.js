@@ -50,7 +50,7 @@ async function start() {
   function selectMode(id) {
     if (!receptionOpen || !targets.nearReception(camera.position)) return;
     if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Por ahora podés usar E1 con asistencia o trabajar por tu cuenta. ¿Cuál preferís?'); return; }
-    if (id === 'order') story.setOrderMeeting(camera.position);
+    ui.reset();
     workflow.start(id); closeReception();
     if (!navigation.isLocked) navigation.enter();
   }
@@ -65,7 +65,7 @@ async function start() {
     if (!state.mode) { openReception(); return; }
     const destination = target();
     if (!destination.nearTarget) {
-      if (destination.waiting) ui.say('technician', state.mode === 'order' ? 'Ya voy a recepción. Esperame junto al mostrador, así charlamos de tu encargo.' : 'Voy hacia E1. Si estoy en el paso, dejame un lugar para acercarme.');
+      if (destination.waiting && state.mode !== 'order') ui.say('technician', 'Voy hacia E1. Si estoy en el paso, dejame un lugar para acercarme.');
       return;
     }
     if (state.stepId === 'station') ui.say('client', state.mode === 'autonomous' ? 'Voy a diseñar un soporte para celular y preparar las dos piezas desde esta computadora.' : 'Quiero un soporte para celular. ¿Me ayudás a diseñarlo?');
@@ -121,9 +121,9 @@ async function start() {
     if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
     if (workflow.getState().complete) return;
     if (workflow.getState().orderAway) {
-      if (event.code === 'Digit1') { event.preventDefault(); workflow.approveOrder(); }
-      if (event.code === 'Digit2') { event.preventDefault(); workflow.deferOrder(); }
-      if (event.code === 'Enter' && workflow.getState().stepId === 'order-next-day') { event.preventDefault(); workflow.returnForOrder(); }
+      if (event.code === 'Digit1' && orderUI.canReply()) { event.preventDefault(); workflow.approveOrder(); }
+      if (event.code === 'Digit2' && orderUI.canReply()) { event.preventDefault(); workflow.deferOrder(); }
+      if (event.code === 'Enter' && orderUI.canReturn()) { event.preventDefault(); workflow.returnForOrder(); }
       return;
     }
     const number = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(event.code);
@@ -148,12 +148,13 @@ async function start() {
     if (mode === 'walk' && state.stepId === 'exit' && targets.atExit(camera.position)) workflow.finish();
     if (mode === 'walk' && state.stepId === 'order-leave' && targets.atExit(camera.position)) workflow.leaveForOrder();
     state = workflow.getState();
+    orderUI.render(state, document.hidden ? 0 : dt);
     if (receptionOpen && !targets.nearReception(camera.position)) closeReception();
     const destination = target(), step = getStep(state);
     ui.render(state, destination, { dt, mode, locked: navigation.isLocked, materialStatus: story.materialStatus });
     let hint = mode !== 'walk' || state.complete || state.orderAway || state.stepId === 'exit' ? null : receptionOpen ? 'Elegí una opción · 1 / 2 / 3 · Esc para usar los botones'
       : !state.mode && targets.nearReception(camera.position) ? 'E · Hablar con recepción'
-        : destination.waiting ? state.mode === 'order' ? 'El técnico se acerca a recepción' : 'El técnico viene hacia E1'
+        : destination.waiting ? state.mode === 'order' ? 'El técnico va al costado derecho del mostrador' : 'El técnico viene hacia E1'
           : destination.nearTarget && step?.action ? 'E · ' + step.action
             : step?.automatic ? step.title + (step.sceneDriven ? '' : ' · ' + Math.round(state.progress * 100) + '%') : null;
     if (mode === 'walk' && !inputBlocked() && !receptionOpen) {

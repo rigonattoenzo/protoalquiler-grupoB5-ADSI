@@ -21,6 +21,9 @@ test('E3 queda sin proyecto y E2 conserva su carcasa aunque avance el soporte en
   words.length = 0; const e2 = display('E2', true); e2.update(printing, 1);
   assert.ok(words.includes('Carcasa para sensor / E2')); assert.ok(words.includes('02  Tapa ventilada'));
   assert.ok(words.every(word => !/Soporte|Respaldo|IMPRESIÓN|50%/.test(word)));
-  words.length = 0; const e1 = display('E1', false); e1.update(printing, 1);
+  words.length = 0; const e1 = display('E1', false); e1.update(idle, 1);
+  assert.ok(words.includes('Sin proyecto abierto')); assert.ok(words.every(word => !/Soporte/.test(word)));
+  words.length = 0; e1.update(printing, 1);
   assert.ok(words.includes('Soporte para celular / E1')); assert.ok(words.includes('IMPRESIÓN 01 / BASE'));
+  words.length = 0; e1.update(idle, 1); assert.ok(words.includes('Sin proyecto abierto'), 'Reiniciar también limpia el monitor');
 });

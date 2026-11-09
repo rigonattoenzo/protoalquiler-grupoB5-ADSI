@@ -120,11 +120,16 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
 
   // Encargo: referencias visibles, anticipo único, autorización remota y retiro.
   renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1);
-  press('KeyE'); press('Digit3'); assert.match(elements.get('flow-title').textContent, /técnico en recepción/);
+  press('KeyE'); press('Digit3'); assert.match(elements.get('flow-title').textContent, /técnico a la derecha/);
+  assert.equal(elements.get('dialogue-speaker').textContent, 'Recepción'); assert.doesNotMatch(elements.get('dialogue-text').textContent, /Ya voy/i);
   const tech = renderer.scene.getObjectByName('Técnico');
   press('KeyE'); assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, false, 'Espera a que el técnico llegue');
-  frames(900);
-  assert.ok(Math.hypot(tech.position.x - renderer.camera.position.x, tech.position.z - renderer.camera.position.z) < 1.65, 'El técnico viene al cliente, que no se movió');
+  frames(240);
+  assert.ok(tech.position.x > CONFIG.reception.x + CONFIG.reception.width / 2 + 0.5, 'El técnico se ubica a la derecha del mostrador');
+  assert.ok(tech.position.z < CONFIG.room.front - 1.5, 'La charla queda alejada de la puerta');
+  assert.equal(elements.get('dialogue-speaker').textContent, 'Asistente técnico');
+  press('KeyE'); assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, false, 'El cliente se acerca al costado para hablar');
+  renderer.camera.position.set(tech.position.x, 1.65, tech.position.z + 1.05);
   press('KeyE'); frames(70);
   assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, true);
   assert.match(elements.get('quote-detail').innerHTML, /15\.000/); assert.match(elements.get('quote-detail').innerHTML, /5\.000/);
@@ -135,11 +140,18 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   assert.equal(elements.get('order-screen').hidden, false); assert.equal(elements.get('end-screen').hidden, true);
   assert.equal(elements.get('toolbar').inert, true);
   const outside = renderer.camera.position.clone(); press('KeyR'); press('KeyV'); assert.ok(renderer.camera.position.equals(outside));
-  frames(180); assert.equal(elements.get('order-phone').hidden, false); assert.match(html, /id="order-title">ProtoAlquiler/); assert.match(elements.get('order-text').textContent, /Terminamos tu diseño/);
+  for (let i = 0; i < 240 && elements.get('order-phone').hidden; i += 1) frames(1);
+  assert.equal(elements.get('order-phone').hidden, false); assert.equal(elements.get('order-greeting').hidden, true, 'El chat abre vacío');
+  press('Digit1'); assert.equal(elements.get('order-approved-reply').hidden, true, 'No puede autorizar antes de recibir el presupuesto');
+  frames(30); assert.equal(elements.get('order-greeting').hidden, true);
+  frames(40); assert.equal(elements.get('order-greeting').hidden, false); assert.equal(elements.get('order-budget').hidden, true);
+  frames(60); assert.equal(elements.get('order-budget').hidden, false); assert.match(html, /id="order-title">ProtoAlquiler/); assert.match(elements.get('order-text').textContent, /Terminamos tu diseño/);
   assert.equal(elements.get('order-approve').focused, true); assert.equal(elements.get('order-decisions').hidden, false);
   elements.get('order-defer').click(); frames(350); assert.equal(elements.get('order-deferred').hidden, false);
   assert.match(elements.get('order-text').textContent, /Terminamos tu diseño/); assert.equal(elements.get('order-return').hidden, true);
-  elements.get('order-approve').click(); frames(1); assert.equal(elements.get('order-confirmed').hidden, false);
+  elements.get('order-approve').click(); frames(1); assert.equal(elements.get('order-confirmed').hidden, true, 'El técnico tarda un momento en responder');
+  elements.get('order-return').click(); frames(1); assert.equal(elements.get('order-phone').hidden, false, 'Espera la confirmación antes de volver');
+  frames(60); assert.equal(elements.get('order-confirmed').hidden, false);
   assert.equal(elements.get('order-approved-reply').hidden, false); assert.equal(elements.get('order-deferred-reply').hidden, false, 'Conserva las respuestas anteriores del chat');
   assert.match(elements.get('order-quote').innerHTML, /10\.000/);
   elements.get('order-return').click(); frames(1);

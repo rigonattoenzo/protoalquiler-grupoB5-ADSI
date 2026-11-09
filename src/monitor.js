@@ -8,18 +8,19 @@ export function createMonitorDisplay(screen, { occupied = false, station = 'E1' 
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
   const previousMaterial = screen.material;
   screen.material = new THREE.MeshBasicMaterial({ map: texture });
-  let elapsed = 0, lastDraw = -1;
+  let elapsed = 0, lastDraw = -1, previousView = '';
+  const empty = state => station === 'E3' || !occupied && (!state.mode || state.stepId === 'station' || state.mode === 'order' && !state.designLevel);
   function draw(state) {
     if (!ctx?.beginPath) return; // Permite comprobar el grafo en Node sin un canvas de render.
     ctx.setTransform(2 / 3, 0, 0, 2 / 3, 0, 0);
-    if (station === 'E3') {
+    if (empty(state)) {
       ctx.fillStyle = '#182b2c'; ctx.fillRect(0, 0, 960, 600);
       ctx.fillStyle = '#233a3b'; ctx.fillRect(0, 0, 960, 62);
       ctx.fillStyle = '#ecf1df'; ctx.font = '600 25px system-ui'; ctx.fillText('ProtoCAD / ' + station, 23, 40);
       ctx.strokeStyle = '#4c6863'; ctx.lineWidth = 3; ctx.strokeRect(432, 200, 96, 115);
       ctx.beginPath(); ctx.moveTo(452, 236); ctx.lineTo(509, 236); ctx.moveTo(452, 255); ctx.lineTo(494, 255); ctx.stroke();
       ctx.fillStyle = '#d9e2cb'; ctx.font = '500 25px system-ui'; ctx.fillText('Sin proyecto abierto', 366, 365);
-      ctx.fillStyle = '#78928c'; ctx.font = '19px system-ui'; ctx.fillText('Estación disponible', 397, 408);
+      ctx.fillStyle = '#78928c'; ctx.font = '19px system-ui'; ctx.fillText(station === 'E3' || !state.mode ? 'Estación disponible' : 'Listo para comenzar', 397, 408);
       texture.needsUpdate = true; return;
     }
     const printing = !occupied && state.stepId?.startsWith('printing');
@@ -67,7 +68,7 @@ export function createMonitorDisplay(screen, { occupied = false, station = 'E1' 
       ctx.strokeStyle = '#344b50'; ctx.lineWidth = 4;
       for (let i = 0; i < 5; i += 1) { const a = project(-0.2 + i * 0.1, 0.476, -0.14), b = project(-0.2 + i * 0.1, 0.476, 0.14); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); }
     } else {
-      if (level >= 1 || !state.mode) cuboid(0, 0.045, 0, 0.64, 0.09, 0.46, state.mode ? 1 : 0.28);
+      if (level >= 1) cuboid(0, 0.045, 0, 0.64, 0.09, 0.46);
       if (level >= 2) { cuboid(0, 0.28, -0.03, 0.5, 0.48, 0.055, 1, -0.25); cuboid(0, 0.1, 0.17, 0.5, 0.08, 0.075); }
     }
     if (slicing) {
@@ -87,7 +88,12 @@ export function createMonitorDisplay(screen, { occupied = false, station = 'E1' 
     texture.needsUpdate = true;
   }
   return {
-    update(state, dt = 0) { elapsed += Math.max(0, dt); if (station === 'E3' && lastDraw >= 0) return; if (elapsed - lastDraw >= (station === 'E1' ? 0.125 : 0.5)) { draw(state); lastDraw = elapsed; } },
+    update(state, dt = 0) {
+      elapsed += Math.max(0, dt);
+      const view = empty(state) ? 'empty' : occupied ? 'electronics' : state.mode + '|' + state.stepId;
+      if (view === 'empty' && previousView === view) return;
+      if (view !== previousView || elapsed - lastDraw >= (station === 'E1' ? 0.125 : 0.5)) { draw(state); lastDraw = elapsed; previousView = view; }
+    },
     dispose() { texture.dispose(); screen.material.dispose(); screen.material = previousMaterial; },
   };
 }

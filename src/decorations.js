@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
+import { DEMO, money } from './workflow.js';
 
 function canvasTexture(width, height, paint) {
   const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
@@ -46,6 +47,27 @@ export function drawProcessPoster(ctx, canvas) {
     }
     ctx.fillStyle = '#453f3c'; ctx.font = '750 ' + w * 0.032 + 'px system-ui'; ctx.fillText(['01 · DISEÑÁ', '02 · IMPRIMÍ', '03 · DISFRUTÁ'][i], x, h * 0.88, pw + 20);
   });
+}
+
+export function drawReceptionRates(ctx, canvas) {
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#fff9e9'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#5c8066'; ctx.fillRect(0, 0, 16, h);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#7d8b6b'; ctx.font = '700 25px system-ui'; ctx.fillText('PROTOALQUILER 3D', 50, 48);
+  ctx.fillStyle = '#453f3c'; ctx.font = '800 61px system-ui'; ctx.fillText('Elegí cómo crear', 48, 113);
+  ctx.fillStyle = '#8d7f69'; ctx.font = '500 25px system-ui'; ctx.fillText('PC + impresora · asistencia básica incluida', 50, 163);
+  ['Con asistencia', 'Por tu cuenta', 'Por encargo'].forEach((title, i) => {
+    const y = 190 + i * 101;
+    ctx.fillStyle = ['#e4ebd6', '#f0e8d5', '#eedbcb'][i]; ctx.fillRect(44, y, w - 88, 86);
+    ctx.fillStyle = '#5c8066'; ctx.font = '800 28px system-ui'; ctx.fillText('0' + (i + 1), 63, y + 43);
+    ctx.fillStyle = '#453f3c'; ctx.font = '650 33px system-ui'; ctx.fillText(title, 130, y + 43);
+    ctx.textAlign = 'right'; ctx.font = (i === 2 ? '650 29px' : '750 42px') + ' system-ui'; ctx.fillText(i === 2 ? 'Presupuesto por trabajo' : money(DEMO.hourlyRate) + ' / h', w - 64, y + 43, i === 2 ? 440 : 400);
+    ctx.textAlign = 'left';
+  });
+  ctx.fillStyle = '#5c8066'; ctx.fillRect(44, 505, w - 88, 58);
+  ctx.fillStyle = '#fff9e9'; ctx.font = '650 26px system-ui'; ctx.fillText('FILAMENTO PLA', 63, 535);
+  ctx.textAlign = 'right'; ctx.font = '750 38px system-ui'; ctx.fillText(money(DEMO.pricePerGram) + ' / g', w - 64, 535);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#8d7f69'; ctx.font = '500 21px system-ui'; ctx.fillText('Material según consumo · Consultanos por tu proyecto', w / 2, h - 15);
 }
 
 // Pictogramas vectoriales, sin depender de una tipografía de símbolos instalada.

@@ -3,31 +3,55 @@ import { getOrderQuote, money } from './workflow.js';
 // Notificación dentro del guion: no usa mensajería ni servicios externos.
 export function createOrderUI({ onApprove, onDefer, onReturn, onRestart }) {
   const $ = id => document.getElementById(id), quote = getOrderQuote();
-  let previous = '', deferredInChat = false;
-  $('order-approve').addEventListener('click', onApprove);
-  $('order-defer').addEventListener('click', onDefer);
-  $('order-return').addEventListener('click', onReturn);
+  let previous = '', currentStep = '', phaseAge = 0, holdAge = 0, deferredInChat = false, replyEnabled = false, returnEnabled = false;
+  $('order-approve').addEventListener('click', () => { if (replyEnabled) onApprove(); });
+  $('order-defer').addEventListener('click', () => { if (replyEnabled) onDefer(); });
+  $('order-return').addEventListener('click', () => { if (returnEnabled) onReturn(); });
   $('order-restart').addEventListener('click', onRestart);
   $('order-quote').innerHTML = '<div><span>Presupuesto final</span><b>' + money(quote.total) + '</b></div><div><span>Anticipo abonado</span><b>− ' + money(quote.deposit) + '</b></div><div class="total"><span>Saldo al retirar</span><b>' + money(quote.balance) + '</b></div>';
+  $('order-text').textContent = '¡Hola! Terminamos tu diseño. Te compartimos cómo quedó el soporte para celular.';
+  function show(id, visible) { const element = $(id); if (element.hidden === !visible) return false; element.hidden = !visible; return visible; }
   return {
-    render(state) {
-      const token = state.stepId + '|' + Boolean(state.orderDeferred);
-      if (token === previous) return;
-      const changedStep = previous.split('|')[0] !== state.stepId; previous = token;
-      $('order-screen').hidden = !state.orderAway;
-      if (!state.orderAway) { deferredInChat = false; return; }
+    canReply: () => replyEnabled,
+    canReturn: () => returnEnabled,
+    render(state, dt = 0) {
+      const changedStep = currentStep !== state.stepId; currentStep = state.stepId;
+      if (!state.orderAway) {
+        show('order-screen', false); previous = ''; deferredInChat = false; replyEnabled = returnEnabled = false; phaseAge = holdAge = 0; return;
+      }
+      if (changedStep) phaseAge = 0;
+      const delta = Number.isFinite(dt) ? Math.min(0.1, Math.max(0, dt)) : 0; phaseAge += delta;
       const designing = state.stepId === 'order-design', approval = state.stepId === 'order-approval';
-      if (designing) deferredInChat = false;
-      deferredInChat ||= Boolean(state.orderDeferred);
-      $('order-transition').hidden = !designing; $('order-phone').hidden = designing;
-      $('order-text').textContent = '¡Hola! Terminamos tu diseño. Te compartimos cómo quedó el soporte para celular.';
-      $('order-preview').hidden = designing; $('order-quote').hidden = designing;
-      $('order-decisions').hidden = !approval; $('order-return').hidden = designing || approval;
-      $('order-deferred-reply').hidden = !deferredInChat; $('order-deferred').hidden = !deferredInChat;
-      $('order-approved-reply').hidden = designing || approval; $('order-confirmed').hidden = designing || approval;
-      $('order-reply-label').textContent = approval ? 'Elegí una respuesta para enviarla' : 'Continuar el recorrido';
-      $('order-chat').scrollTop = changedStep && approval ? 0 : $('order-chat').scrollHeight || 0;
-      if (changedStep && !designing) $(approval ? 'order-approve' : 'order-return').focus({ preventScroll: true });
+      const approved = state.stepId === 'order-next-day';
+      if (designing) { deferredInChat = false; holdAge = 0; }
+      if (state.orderDeferred && !deferredInChat) { deferredInChat = true; holdAge = 0; }
+      if (deferredInChat) holdAge += delta;
+      const greeting = approved || approval && phaseAge >= 1;
+      const budget = approved || approval && phaseAge >= 2;
+      const holdAnswer = deferredInChat && holdAge >= 0.65;
+      const confirmation = approved && phaseAge >= 0.85;
+      const typing = approval && (phaseAge >= 0.35 && !budget || deferredInChat && !holdAnswer) || approved && !confirmation;
+      const wasReply = replyEnabled, wasReturn = returnEnabled;
+      replyEnabled = approval && budget && (!deferredInChat || holdAnswer);
+      returnEnabled = confirmation;
+      const token = [state.stepId, greeting, budget, deferredInChat, holdAnswer, confirmation, typing, replyEnabled].join('|');
+      if (token === previous) return;
+      previous = token;
+      show('order-screen', true); show('order-transition', designing); show('order-phone', !designing);
+      let newMessage = show('order-greeting', greeting);
+      newMessage = show('order-budget', budget) || newMessage;
+      show('order-preview', greeting); show('order-quote', budget);
+      newMessage = show('order-deferred-reply', deferredInChat) || newMessage;
+      newMessage = show('order-deferred', holdAnswer) || newMessage;
+      newMessage = show('order-approved-reply', approved) || newMessage;
+      newMessage = show('order-confirmed', confirmation) || newMessage;
+      show('order-typing', typing); show('order-decisions', replyEnabled); show('order-return', returnEnabled);
+      $('order-contact-status').textContent = typing ? 'escribiendo…' : 'en línea · diseño e impresión 3D';
+      $('order-clock').textContent = approved ? '10:26' : deferredInChat ? '10:25' : '10:24';
+      $('order-reply-label').textContent = replyEnabled ? 'Elegí una respuesta para enviarla' : returnEnabled ? 'Continuar el recorrido' : 'Esperando un mensaje…';
+      if (newMessage) $('order-chat').scrollTop = $('order-chat').scrollHeight || 0;
+      if (!wasReply && replyEnabled) $('order-approve').focus({ preventScroll: true });
+      if (!wasReturn && returnEnabled) $('order-return').focus({ preventScroll: true });
     },
   };
 }

@@ -67,7 +67,7 @@ export function createWorkflowScene({ scene, world, camera }) {
   (camera || root).add(bag); bag.position.set(0.42, -0.38, -0.85); bag.rotation.y = -0.12;
   bag.visible = false; avatarBag.visible = false;
   const patrol = [{ x: -1.1, z: 3.8 }, { x: 0.35, z: 3.8 }, { x: 0.35, z: -3.5 }, { x: -2.9, z: -3.5 }, { x: -2.9, z: 3.8 }];
-  const orderMeeting = { x: CONFIG.reception.x + 0.9, z: CONFIG.reception.z + 1.5 };
+  const orderMeeting = Object.freeze({ x: CONFIG.reception.x + CONFIG.reception.width / 2 + 0.95, z: CONFIG.reception.z + 0.1 });
   let patrolIndex = 1, route = [], called = false, elapsed = 0, wait = 0, lastStep = 'idle', materialPhase = 'idle', phaseClock = 0, materialReady = false;
   let state = { mode: null, stepId: 'idle', stepIndex: -1, progress: 0 };
   const monitors = [...world.screens].map(([id, screen]) => createMonitorDisplay(screen, { occupied: id === 'E2', station: id }));
@@ -78,7 +78,7 @@ export function createWorkflowScene({ scene, world, camera }) {
     route = [{ x: 0.35, z: p.z }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: CONFIG.workstation.assistant.x, z: CONFIG.workstation.approachZ }, { ...CONFIG.workstation.assistant }];
   }
   function planOrderReception() {
-    route = [{ x: 0.35, z: technician.position.z }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: -2.8, z: CONFIG.workstation.approachZ }, { x: -2.8, z: orderMeeting.z }, { ...orderMeeting }];
+    route = [{ x: 0.35, z: technician.position.z }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: orderMeeting.x, z: CONFIG.workstation.approachZ }, { ...orderMeeting }];
     wait = 0;
   }
   function applyState(next) {
@@ -124,7 +124,7 @@ export function createWorkflowScene({ scene, world, camera }) {
     const obstacles = world.colliders.filter(item => item !== technicianCollider);
     if (playerPosition) obstacles.push({ minX: playerPosition.x - 0.26, maxX: playerPosition.x + 0.26, minZ: playerPosition.z - 0.26, maxZ: playerPosition.z + 0.26 });
     const fetching = ['to-cabinet', 'to-printer'].includes(materialPhase);
-    const amount = Math.min(distance, dt * (fetching ? 2.6 : called ? 1.45 : 0.8));
+    const amount = Math.min(distance, dt * (fetching ? 2.6 : called ? state.mode === 'order' ? 2.4 : 1.45 : 0.8));
     const next = moveCircle(technician.position, { x: dx / distance * amount, z: dz / distance * amount }, 0.28, obstacles);
     technician.position.set(next.x, 0, next.z); technician.rotation.y = Math.atan2(-dx, -dz); syncCollider();
   }
@@ -213,7 +213,6 @@ export function createWorkflowScene({ scene, world, camera }) {
   }
   return {
     applyState, update,
-    setOrderMeeting(position) { orderMeeting.x = position.x + 0.9; orderMeeting.z = THREE.MathUtils.clamp(position.z + 0.35, 6.15, 6.65); },
     get orderMeetingPoint() { return orderMeeting; },
     get assistantReady() { return called && route.length === 0; },
     get materialReady() { return materialReady; },

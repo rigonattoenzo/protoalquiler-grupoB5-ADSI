@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { createCharacter } from './character.js';
 import { DEMO, money } from './workflow.js';
-import { addDecorations, applyFloorTexture, drawRoomPictogram, drawProcessPoster } from './decorations.js';
+import { addDecorations, applyFloorTexture, drawRoomPictogram, drawProcessPoster, drawReceptionRates } from './decorations.js';
 
 export function createWorld(scene) {
   const { colors, room, reception, cabinet } = CONFIG;
@@ -108,7 +108,7 @@ export function createWorld(scene) {
   receptionScreen.name = 'Pantalla recepción';
   box('Teclado recepción', [0.48, 0.025, 0.17], [terminalX, 1.13, reception.z - 0.4], colors.ink);
   box('Mouse recepción', [0.1, 0.03, 0.14], [terminalX - 0.4, 1.135, reception.z - 0.4], colors.ink);
-  const rateSheet = sign('MODALIDADES Y TARIFAS\nCon asistencia: ' + money(DEMO.hourlyRate) + '/h + PLA ' + money(DEMO.pricePerGram) + '/g\nPor mi cuenta: ' + money(DEMO.hourlyRate) + '/h + PLA ' + money(DEMO.pricePerGram) + '/g\nPor encargo: presupuesto por trabajo\nPLA: ' + money(DEMO.pricePerGram) + '/g · consultá en recepción', { x: reception.x + 0.83, y: 1.121, z: reception.z + 0.1, width: 1.43, height: 0.84, background: '#fff4db', color: '#453f3c', fontSize: 44 });
+  const rateSheet = sign('', { x: reception.x + 0.83, y: 1.121, z: reception.z + 0.1, width: 1.43, height: 0.84, draw: drawReceptionRates });
   rateSheet.name = 'Hoja de tarifas'; rateSheet.rotation.x = -Math.PI / 2;
   cylinder(scene, 0.07, 0.16, [reception.x + 1.67, 1.2, reception.z + 0.05], colors.green);
   cylinder(scene, 0.057, 0.007, [reception.x + 1.67, 1.283, reception.z + 0.05], colors.ink);

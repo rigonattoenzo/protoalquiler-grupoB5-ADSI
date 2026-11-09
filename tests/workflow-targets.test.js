@@ -8,11 +8,12 @@ test('primero se entra y se camina: las opciones no se ofrecen desde la puerta n
   assert.equal(nearReception({ x: CONFIG.reception.x, z: CONFIG.reception.staffZ }), false);
   assert.equal(nearReception({ x: CONFIG.reception.x, z: CONFIG.reception.z + 1.1 }), true);
 });
-test('el encargo espera al técnico junto al cliente en recepción, y el retiro se hace en el mostrador', () => {
+test('el encargo se conversa a la derecha del mostrador, y el retiro se hace en recepción', () => {
   const flow = createWorkflow(); flow.start('order');
-  const orderMeetingPoint = { x: CONFIG.reception.x + 0.9, z: 6.15 }, client = { x: CONFIG.reception.x, z: CONFIG.reception.z + 1.1 };
+  const orderMeetingPoint = { x: CONFIG.reception.x + CONFIG.reception.width / 2 + 0.95, z: CONFIG.reception.z + 0.1 }, client = { x: orderMeetingPoint.x, z: orderMeetingPoint.z + 1.1 };
   assert.equal(getWorkflowTarget(flow.getState(), client, { orderMeetingPoint, assistantReady: false }).nearTarget, false);
   assert.equal(getWorkflowTarget(flow.getState(), client, { orderMeetingPoint, assistantReady: true }).nearTarget, true);
+  assert.equal(getWorkflowTarget(flow.getState(), { x: CONFIG.reception.x, z: CONFIG.reception.z + 1.1 }, { orderMeetingPoint }).nearTarget, false);
   assert.equal(getWorkflowTarget(flow.getState(), CONFIG.workstation.target, { orderMeetingPoint }).nearTarget, false);
   flow.advance(); flow.advance(); flow.leaveForOrder();
   assert.equal(getWorkflowTarget(flow.getState(), CONFIG.workstation.target).nearTarget, false);
