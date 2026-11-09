@@ -2,7 +2,7 @@
 export const CONFIG = {
   room: { width: 14.6, depth: 13.2, height: 3.3, left: -8, right: 6.6, back: -6, front: 7.2 },
   graphics: { pixelRatio: 1.25, shadows: false },
-  reception: { x: -4.65, z: 4.65, width: 5.4, depth: 1.1, staffZ: 3.5 },
+  reception: { x: -5.88, z: 4.65, width: 4.16, depth: 1.1, staffZ: 3.5 },
   cabinet: { x: -1.3, z: -5.45, width: 2.1, depth: 1.05 },
   workstation: { width: 5.4, depth: 1.4, approachZ: 4.3, target: { x: 1.35, z: 3.75 }, center: { x: 3.5, z: 3.75 }, assistant: { x: 2.95, z: 3.75 } },
   navigation: {

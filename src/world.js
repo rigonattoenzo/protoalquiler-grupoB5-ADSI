@@ -5,7 +5,7 @@ import { DEMO, money } from './workflow.js';
 
 export function createWorld(scene) {
   const { colors, room, reception, cabinet } = CONFIG;
-  const colliders = [], cutaway = [], papers = [], printers = new Map(), screens = new Map(), renderCandidates = [];
+  const colliders = [], cutaway = [], seats = new Map(), printers = new Map(), screens = new Map(), renderCandidates = [];
   let filamentSource;
   const materialCache = new Map(), cylinderCache = new Map();
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -30,13 +30,16 @@ export function createWorld(scene) {
     const mesh = new THREE.Mesh(cylinderCache.get(key), material(color));
     mesh.position.set(...position); mesh.castShadow = true; parent.add(mesh); renderCandidates.push(mesh); return mesh;
   }
-  function sign(text, { x, y, z, width = 2, height = 0.45, rotation = 0, background = '#453f3c', color = '#fff9ed', fontSize = 48 } = {}) {
+  function sign(text, { x, y, z, width = 2, height = 0.45, rotation = 0, background = '#453f3c', color = '#fff9ed', fontSize = 48, draw } = {}) {
     const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = Math.round(1024 * height / width);
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = color; ctx.font = '600 ' + fontSize + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const lines = text.split('\n');
-    lines.forEach((line, i) => ctx.fillText(line, 512, canvas.height / 2 + (i - (lines.length - 1) / 2) * fontSize * 1.45, 960));
+    if (draw) draw(ctx, canvas);
+    else {
+      const lines = text.split('\n');
+      lines.forEach((line, i) => ctx.fillText(line, 512, canvas.height / 2 + (i - (lines.length - 1) / 2) * fontSize * 1.45, 960));
+    }
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }));
     mesh.position.set(x, y, z); mesh.rotation.y = rotation; scene.add(mesh); return mesh;
@@ -82,17 +85,34 @@ export function createWorld(scene) {
     const label = sign(name, { x: -6.04, y: room.height + 0.012, z, width: 3, height: 0.55, background: '#e1cfbb', color: '#453f3c', fontSize: 65 });
     label.rotation.x = -Math.PI / 2;
   });
+  // Juntas oscuras sobre la fachada y el techo: distinguen los tres ambientes
+  // sin volver a abrir huecos entre los volúmenes cerrados.
+  [-3, -0.05].forEach(z => {
+    box('Junta vertical de habitaciones', [0.018, room.height, 0.045], [-4.066, room.height / 2, z], colors.ink);
+    box('Junta superior de habitaciones', [3.925, 0.018, 0.045], [-6.0375, room.height + 0.01, z], colors.ink);
+  });
 
   box('Mostrador recepción', [reception.width, 1.02, reception.depth], [reception.x, 0.51, reception.z], colors.blue, { solid: true });
   box('Tapa recepción', [reception.width + 0.12, 0.11, reception.depth + 0.12], [reception.x, 1.06, reception.z], colors.wood);
   box('Zócalo recepción', [reception.width - 0.2, 0.1, reception.depth], [reception.x, 0.05, reception.z], colors.ink);
   sign('PROTOALQUILER / RECEPCIÓN', { x: reception.x, y: 0.65, z: reception.z + reception.depth / 2 + 0.01, width: 3.4, height: 0.3, background: '#bd8b73', fontSize: 55 });
-  box('Terminal recepción', [0.6, 0.4, 0.06], [-6.4, 1.39, reception.z - 0.1], colors.ink);
-  box('Pie terminal', [0.15, 0.22, 0.15], [-6.4, 1.16, reception.z - 0.1], colors.ink);
-  ['01\nCON ASISTENCIA\nDiseñamos juntos', '02\nPOR MI CUENTA\nPróximamente', '03\nPOR ENCARGO\nPróximamente'].forEach((text, i) => {
-    const paper = sign(text, { x: -5.3 + i * 1.05, y: 1.126, z: reception.z + 0.15, width: 0.83, height: 0.72, background: ['#f7ecd3', '#e6eadb', '#ecdcd3'][i], color: '#453f3c', fontSize: 68 });
-    paper.name = 'Ficha modalidad ' + (i + 1); paper.rotation.x = -Math.PI / 2;
-    paper.userData.mode = ['assisted', 'autonomous', 'order'][i]; papers.push(paper);
+  [0.25, 0.45, 0.85].forEach(y => box('Listón recepción', [reception.width - 0.16, 0.022, 0.025], [reception.x, y, reception.z + reception.depth / 2 + 0.015], colors.wood));
+  // La pantalla y el teclado miran al personal, al otro lado del mostrador.
+  const terminalX = reception.x - 0.48, terminalZ = reception.z - 0.04;
+  box('Terminal recepción', [0.7, 0.44, 0.065], [terminalX, 1.43, terminalZ], colors.ink);
+  box('Pie terminal', [0.075, 0.22, 0.075], [terminalX, 1.2, terminalZ], colors.ink);
+  box('Base terminal recepción', [0.32, 0.025, 0.23], [terminalX, 1.13, terminalZ], colors.ink);
+  const receptionScreen = sign('ProtoAlquiler\nSesiones / Caja', { x: terminalX, y: 1.43, z: terminalZ - 0.037, width: 0.63, height: 0.36, rotation: Math.PI, background: '#233a3b', color: '#d8e8cf', fontSize: 70 });
+  receptionScreen.name = 'Pantalla recepción';
+  box('Teclado recepción', [0.48, 0.025, 0.17], [terminalX, 1.13, reception.z - 0.4], colors.ink);
+  box('Mouse recepción', [0.1, 0.03, 0.14], [terminalX - 0.4, 1.135, reception.z - 0.4], colors.ink);
+  const rateSheet = sign('MODALIDADES Y TARIFAS\nCon asistencia: ' + money(DEMO.hourlyRate) + '/h + PLA ' + money(DEMO.pricePerGram) + '/g\nPor mi cuenta: ' + money(DEMO.hourlyRate) + '/h + PLA ' + money(DEMO.pricePerGram) + '/g\nPor encargo: presupuesto por trabajo\nPLA: ' + money(DEMO.pricePerGram) + '/g · consultá en recepción', { x: reception.x + 0.83, y: 1.121, z: reception.z + 0.1, width: 1.43, height: 0.84, background: '#fff4db', color: '#453f3c', fontSize: 44 });
+  rateSheet.name = 'Hoja de tarifas'; rateSheet.rotation.x = -Math.PI / 2;
+  cylinder(scene, 0.07, 0.16, [reception.x + 1.67, 1.2, reception.z + 0.05], colors.green);
+  cylinder(scene, 0.057, 0.007, [reception.x + 1.67, 1.283, reception.z + 0.05], colors.ink);
+  [-1, 1].forEach(side => {
+    const pen = box('Lapicera recepción', [0.014, 0.23, 0.014], [reception.x + 1.67 + side * 0.023, 1.32, reception.z + 0.05], side < 0 ? colors.blue : colors.ink);
+    pen.rotation.z = side * 0.12;
   });
 
   box('Armario de filamentos', [cabinet.width, 2.05, cabinet.depth], [cabinet.x, 1.025, cabinet.z], 0xbbd3bd, { solid: true, transparent: true, opacity: 0.13, depthWrite: false });
@@ -116,7 +136,7 @@ export function createWorld(scene) {
   }));
   sign('FILAMENTOS / SUMINISTRO TÉCNICO', { x: cabinet.x, y: 1.94, z: cabinet.z + cabinet.depth / 2 + 0.01, width: 1.95, height: 0.17, fontSize: 48 });
 
-  function chair(id, x, z) {
+  function chair(id, x, z, { yaw = 0, occupied = false } = {}) {
     const group = new THREE.Group(); group.name = 'Silla ' + id; group.position.set(x, 0, z); scene.add(group);
     box('Asiento ' + id, [0.64, 0.1, 0.6], [0, 0.51, 0], colors.ink, { parent: group });
     box('Respaldo ' + id, [0.59, 0.58, 0.085], [0, 0.86, 0.28], 0x827b70, { parent: group });
@@ -128,11 +148,19 @@ export function createWorld(scene) {
       const wheel = cylinder(group, 0.055, 0.045, [Math.sin(angle) * 0.32, 0.055, Math.cos(angle) * 0.32], colors.ink, 12); wheel.rotation.z = Math.PI / 2;
     }
     [-1, 1].forEach(s => { box('Brazo silla', [0.065, 0.055, 0.36], [s * 0.35, 0.74, 0.01], colors.ink, { parent: group }); box('Apoyo brazo', [0.04, 0.2, 0.04], [s * 0.35, 0.63, 0.08], 0x69625a, { parent: group }); });
-    barrier('Silla ' + id, x - 0.39, x + 0.39, z - 0.37, z + 0.37);
+    group.rotation.y = yaw;
+    const collider = barrier('Silla ' + id, x - 0.39, x + 0.39, z - 0.37, z + 0.37);
+    if (!occupied) seats.set(id, { id, position: { x, z }, eyeHeight: 1.35, collider, lookAt: { x: CONFIG.stations.find(item => item.id === id).x - 1.75, y: 1.43, z: z - 1.23 } });
   }
+  chair('Recepción', reception.x, reception.staffZ, { yaw: Math.PI, occupied: true });
+  const foliageGeometry = new THREE.IcosahedronGeometry(0.13, 0);
   CONFIG.stations.forEach(({ id, x, z }) => {
     const left = x - 1.75, printerX = x + 1.55;
     box('Mesa ' + id, [CONFIG.workstation.width, 0.12, CONFIG.workstation.depth], [x, 0.85, z], colors.wood, { solid: true });
+    box('Canto madera ' + id, [CONFIG.workstation.width, 0.025, 0.035], [x, 0.84, z + 0.715], 0xa77d55);
+    [-0.17, 0.03].forEach(dz => box('Veta madera ' + id, [2.25, 0.003, 0.009], [x - 0.3, 0.912, z + dz], 0xc19a72));
+    box('Cajón ' + id, [0.75, 0.2, 0.7], [x - 0.1, 0.68, z - 0.15], 0xb99169);
+    box('Tirador cajón ' + id, [0.23, 0.022, 0.025], [x - 0.1, 0.68, z + 0.213], colors.ink);
     [-2.5, 2.5].forEach(dx => box('Pata ' + id, [0.08, 0.8, 1.2], [x + dx, 0.4, z], colors.ink));
     box('Divisor ' + id, [5.4, 1.26, 0.08], [x, 0.63, z - 0.75], colors.mint, { solid: true });
     box('Monitor ' + id, [1.17, 0.77, 0.075], [left, 1.42, z - 0.08], colors.ink);
@@ -151,7 +179,9 @@ export function createWorld(scene) {
     const head = box('Cabezal impresora ' + id, [0.16, 0.19, 0.14], [0, -0.05, 0], colors.blue, { parent: gantry });
     const loadedSpool = spool([printerX, 2.39, z], DEMO.color, 0.8); loadedSpool.userData.dynamic = true; loadedSpool.visible = id !== 'E1';
     printers.set(id, { x: printerX, z, bed, gantry, head, spool: loadedSpool });
-    chair(id, left, z + 1.23);
+    chair(id, id === 'E2' ? left : x - 0.1, z + 1.23, { occupied: id === 'E2' });
+    cylinder(scene, 0.09, 0.12, [x + 0.55, 0.98, z - 0.38], 0xc69576);
+    const sprout = new THREE.Mesh(foliageGeometry, material(colors.green)); sprout.position.set(x + 0.55, 1.12, z - 0.38); sprout.name = 'Planta ' + id; scene.add(sprout); renderCandidates.push(sprout);
     sign(id + ' / ESTACIÓN', { x: x - 0.2, y: 1.07, z: z - 0.703, width: 1.35, height: 0.2, background: '#95b59c', color: '#453f3c', fontSize: 60 });
   });
 
@@ -160,19 +190,38 @@ export function createWorld(scene) {
   sampleGeometries.forEach((geometry, i) => { const mesh = new THREE.Mesh(geometry, material([colors.mint, colors.peach, colors.blue][i % 3])); mesh.name = 'Muestra vidriera ' + (i + 1); mesh.position.set(0.95 + i * 0.9, 1.02, room.front - 0.55); mesh.castShadow = true; scene.add(mesh); });
   sign('PROTOALQUILER 3D', { x: -0.1, y: 2.85, z: room.back + 0.052, width: 4.8, height: 0.52, fontSize: 79 });
   sign('TALLER DE IDEAS / DISEÑO + IMPRESIÓN', { x: -0.1, y: 2.37, z: room.back + 0.053, width: 4.4, height: 0.22, background: '#f7eedf', color: '#5c8066', fontSize: 46 });
-  const rateSign = sign('TARIFAS\nEstación: ' + money(DEMO.hourlyRate) + '/hora\nPLA: ' + money(DEMO.pricePerGram) + '/g\nPC + impresora + asistencia básica', { x: room.right - 0.052, y: 2.46, z: CONFIG.stations[1].z, width: 2.5, height: 1.05, rotation: -Math.PI / 2, background: '#f0dfbb', color: '#453f3c', fontSize: 42 });
+  const rateZ = (CONFIG.stations[1].z + CONFIG.stations[2].z) / 2;
+  const rateFrame = box('Marco tarifario', [0.055, 1.63, 2.58], [room.right - 0.045, 2.15, rateZ], colors.green); cutaway.push(rateFrame);
+  const rateSign = sign('', { x: room.right - 0.078, y: 2.15, z: rateZ, width: 2.5, height: 1.55, rotation: -Math.PI / 2, background: '#fff0d2', color: '#453f3c', draw(ctx) {
+    ctx.fillStyle = '#5c8066'; ctx.fillRect(25, 25, 974, 15);
+    ctx.font = '800 104px system-ui'; ctx.fillStyle = '#453f3c'; ctx.fillText('TARIFAS', 512, 121);
+    ctx.font = '600 32px system-ui'; ctx.fillText('Con asistencia o por tu cuenta', 512, 174);
+    ctx.fillStyle = '#5c8066'; ctx.fillRect(35, 196, 954, 150);
+    ctx.fillStyle = '#fff9ed'; ctx.font = '750 98px system-ui'; ctx.fillText(money(DEMO.hourlyRate) + ' / hora', 512, 274, 900);
+    ctx.fillStyle = '#b47b44'; ctx.font = '750 76px system-ui'; ctx.fillText('PLA ' + money(DEMO.pricePerGram) + ' / g', 512, 421, 920);
+    ctx.fillStyle = '#453f3c'; ctx.font = '500 40px system-ui'; ctx.fillText('Computadora + impresora', 512, 510);
+    ctx.font = '500 36px system-ui'; ctx.fillText('Revisión técnica incluida', 512, 569);
+    ctx.font = '500 30px system-ui'; ctx.fillText('Encargos: presupuesto por trabajo', 512, 612);
+  } });
   rateSign.name = 'Tarifario'; cutaway.push(rateSign);
+  const poster = sign('DE LA IDEA A LA PIEZA\n01 DISEÑÁ · 02 PREPARÁ · 03 IMPRIMÍ\nProbá. Ajustá. Volvé a crear.', { x: room.right - 0.055, y: 2.5, z: CONFIG.stations[0].z + 0.05, width: 2.4, height: 0.95, rotation: -Math.PI / 2, background: '#e6c6a5', color: '#453f3c', fontSize: 48 });
+  poster.name = 'Póster del proceso'; cutaway.push(poster);
+  const frame = box('Marco póster', [0.035, 1.04, 2.49], [room.right - 0.035, 2.5, CONFIG.stations[0].z + 0.05], colors.wood); cutaway.push(frame);
+  const entryPoster = sign('TU PRÓXIMA IDEA\nEMPIEZA ACÁ\nDiseño + fabricación local', { x: room.left + 0.045, y: 2.08, z: 5.05, width: 1.45, height: 1.15, rotation: Math.PI / 2, background: '#95b59c', color: '#fff9ed', fontSize: 64 });
+  entryPoster.name = 'Póster recepción';
   const entryLabel = sign('ACCESO ÚNICO', { x: -4.7, y: 0.04, z: room.front + 0.5, width: 2, height: 0.3, fontSize: 60 }); entryLabel.rotation.x = -Math.PI / 2;
 
   function person(name, position, options, yaw = 0) {
     const character = createCharacter(options); character.name = name; character.position.set(...position); character.rotation.y = yaw; scene.add(character);
     barrier(name, position[0] - 0.3, position[0] + 0.3, position[2] - 0.3, position[2] + 0.3); return character;
   }
-  const receptionist = person('Recepcionista', [reception.x, 0, reception.staffZ], { shirt: colors.blue }, Math.PI);
+  const receptionist = person('Recepcionista', [reception.x, 0, reception.staffZ], { shirt: colors.blue, seated: true }, Math.PI);
   const technician = person('Técnico', [-1.1, 0, 3.8], { shirt: colors.green, technician: true }, 0);
   const e2 = CONFIG.stations[1];
   const worker = person('Cliente trabajando', [e2.x - 1.75, 0, e2.z + 1.23], { shirt: 0xc2a36e, seated: true }, 0);
-  const player = createCharacter({ shirt: 0x7f9baf }); player.visible = false; scene.add(player);
+  const player = new THREE.Group(); player.name = 'Cliente'; player.visible = false; scene.add(player);
+  const standingPlayer = createCharacter({ shirt: 0x7f9baf }), seatedPlayer = createCharacter({ shirt: 0x7f9baf, seated: true });
+  seatedPlayer.visible = false; player.add(standingPlayer, seatedPlayer);
   scene.add(new THREE.HemisphereLight(0xfff7e8, 0xb8a285, 2.7));
   const sun = new THREE.DirectionalLight(0xffedcf, 2.6); sun.position.set(-2, 8, 9); sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 12, bottom: -10, near: 0.5, far: 32 }); sun.shadow.normalBias = 0.035; scene.add(sun);
@@ -197,11 +246,10 @@ export function createWorld(scene) {
     items.forEach((mesh, index) => { batch.setMatrixAt(index, mesh.matrixWorld); mesh.visible = false; });
     batch.instanceMatrix.needsUpdate = true; batch.computeBoundingSphere(); scene.add(batch);
   }
-  const raycaster = new THREE.Raycaster();
   return {
-    colliders, player, receptionist, technician, worker, printers, screens, papers, cabinetDoor, filamentSource,
+    colliders, player, receptionist, technician, worker, printers, screens, seats, rateSheet, cabinetDoor, filamentSource,
     setOverview(enabled) { cutaway.forEach(object => { object.visible = !enabled; }); player.visible = enabled; },
-    paperAtAim(camera) { raycaster.setFromCamera(new THREE.Vector2(), camera); return raycaster.intersectObjects(papers, false)[0]?.object.userData.mode ?? null; },
+    setPlayerSeated(seated) { standingPlayer.visible = !seated; seatedPlayer.visible = seated; },
     getZone({ x, z }) {
       if (z > room.front - 0.2) return 'Acceso';
       if (z > 5.7 && x < -1.6) return 'Recepción';

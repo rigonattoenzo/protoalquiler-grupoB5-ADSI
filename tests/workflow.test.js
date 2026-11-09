@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorkflow, STEPS, DEMO, MODES, getQuote } from '../src/workflow.js';
+import { createWorkflow, STEPS, AUTONOMOUS_STEPS, getStep, DEMO, MODES, getQuote } from '../src/workflow.js';
 const finishAnimation = flow => { for (let i = 0; i < 200; i += 1) flow.tick(0.1); };
 test('tres modalidades claras, secuencia asistida con revisión y dos impresiones', () => {
   assert.equal(MODES.length, 3); const flow = createWorkflow();
@@ -44,4 +44,24 @@ test('la bobina y la salida requieren sus propias condiciones; no se saltan con 
   for (let i = 0; i < 500; i += 1) flow.tick(0.1);
   assert.equal(flow.getState().stepId, 'material'); assert.equal(flow.getState().materialLoaded, false);
   flow.completeMaterial(); assert.equal(flow.getState().materialLoaded, true);
+});
+test('autónomo diseña y lamina ambas piezas solo, solicita revisión y completa el mismo cierre', () => {
+  const flow = createWorkflow(); assert.equal(flow.start('autonomous'), true);
+  assert.equal(flow.start('assisted'), false, 'No cambia de modalidad en medio de un trabajo');
+  for (const step of AUTONOMOUS_STEPS) {
+    const state = flow.getState(); assert.equal(state.stepId, step.id);
+    assert.equal(getStep(state), step); assert.equal(state.mode, 'autonomous');
+    assert.equal(state.assistantCalled, ['confirm', 'material'].includes(step.id));
+    if (step.id === 'design-detail') { assert.equal(state.designLevel, 1); assert.equal(state.baseOnTable, false); }
+    if (step.id === 'prepare') { assert.equal(state.designLevel, 2); assert.equal(state.prepared, false); }
+    if (step.id === 'confirm') { assert.equal(state.prepared, true); assert.equal(state.confirmed, false); }
+    if (step.id === 'printing-detail') assert.ok(state.baseOnTable && state.designLevel === 2);
+    if (step.sceneDriven) { assert.equal(flow.advance(), false); flow.completeMaterial(); }
+    else if (step.automatic) { assert.equal(flow.advance(), false); finishAnimation(flow); }
+    else if (step.id === 'exit') flow.finish();
+    else if (step.id !== 'complete') flow.advance();
+  }
+  assert.ok(flow.getState().hasBag && flow.getState().complete);
+  flow.reset(); assert.equal(flow.getState().mode, null);
+  assert.equal(flow.start('assisted'), true); assert.equal(flow.getState().designLevel, 0);
 });

@@ -15,7 +15,7 @@ const navigationSource = (await readFile(new URL('../src/navigation.js', import.
   .replace("from './look.js'", `from ${JSON.stringify(new URL('../src/look.js', import.meta.url).href)}`);
 const { createNavigation } = await import(asModuleUrl(navigationSource));
 
-function fixture() {
+function fixture(colliders = []) {
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;
   const documentTarget = new EventTarget();
@@ -35,7 +35,7 @@ function fixture() {
   globalThis.document = documentTarget;
   globalThis.window = windowTarget;
   const camera = new THREE.PerspectiveCamera();
-  const nav = createNavigation({ camera, domElement: element, colliders: [], config: CONFIG.navigation });
+  const nav = createNavigation({ camera, domElement: element, colliders, config: CONFIG.navigation });
   const emit = (target, type, values = {}) => {
     const event = new Event(type, { cancelable: true });
     Object.entries(values).forEach(([key, value]) => Object.defineProperty(event, key, { value }));
@@ -153,5 +153,34 @@ test('perder foco y liberar el mouse limpia la mirada pendiente antes de reanuda
     f.nav.enter();
     f.frames();
     sameRotation(f.camera, before);
+  } finally { f.dispose(); }
+});
+test('sentarse permite mirar, bloquea WASD y levantarse restaura una posición libre', () => {
+  const { x, z } = CONFIG.navigation.spawn;
+  const chair = { id: 'Silla', minX: x - 0.39, maxX: x + 0.39, minZ: z - 1.37, maxZ: z - 0.63 };
+  const f = fixture([chair]);
+  const seat = { id: 'E1', position: { x, z: z - 1 }, eyeHeight: 1.35, lookAt: { x: x - 1.75, y: 1.43, z: z - 2.23 }, collider: chair };
+  try {
+    f.nav.enter(); assert.equal(f.nav.sit(seat), true); f.frames();
+    assert.equal(f.nav.isSeated, true); assert.equal(f.nav.seatId, 'E1');
+    assert.equal(f.camera.position.y, 1.35);
+    const position = f.camera.position.clone(), rotation = f.camera.quaternion.clone();
+    f.key('KeyW'); f.frames(60); assert.ok(f.camera.position.distanceTo(position) < 1e-9);
+    f.mouse(1); f.mouse(30); f.frames(); assert.ok(f.camera.quaternion.angleTo(rotation) > 0.01);
+    assert.equal(f.nav.stand(), true); f.frames(); assert.equal(f.nav.isSeated, false);
+    assert.equal(f.camera.position.y, CONFIG.navigation.eyeHeight);
+    assert.equal(f.camera.position.z, z);
+    f.nav.sit(seat); f.nav.reset(); assert.equal(f.nav.isSeated, false); assert.equal(f.nav.seatId, null);
+  } finally { f.dispose(); }
+});
+test('sentarse no atraviesa paredes ni se permite desde la vista deshabilitada', () => {
+  const { x, z } = CONFIG.navigation.spawn;
+  const wall = { minX: x - 3, maxX: x + 3, minZ: z - 0.6, maxZ: z - 0.5 };
+  const f = fixture([wall]);
+  const seat = { id: 'E1', position: { x, z: z - 1 }, eyeHeight: 1.35, lookAt: { x, y: 1.43, z: z - 2 } };
+  try {
+    const position = f.camera.position.clone();
+    assert.equal(f.nav.sit(seat), false); assert.ok(f.camera.position.equals(position));
+    f.nav.setEnabled(false); assert.equal(f.nav.sit(seat), false);
   } finally { f.dispose(); }
 });

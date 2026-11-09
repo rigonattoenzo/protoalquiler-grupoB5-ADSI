@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import { DEMO, STEPS } from './workflow.js';
+import { DEMO, getStep } from './workflow.js';
 import { moveCircle } from './physics.js';
 import { createMonitorDisplay } from './monitor.js';
 
 export function createWorkflowScene({ scene, world, camera }) {
-  const root = new THREE.Group(); root.name = 'Recorrido asistido'; scene.add(root);
+  const root = new THREE.Group(); root.name = 'Recorrido presencial'; scene.add(root);
   const e1 = CONFIG.stations[0], printer = world.printers.get('E1');
   const pla = new THREE.MeshStandardMaterial({ color: DEMO.color, roughness: 0.7 });
   function component(name, isBack, parent = root) {
@@ -135,7 +135,7 @@ export function createWorkflowScene({ scene, world, camera }) {
     walkTechnician(step, playerPosition);
     updateMaterial(step);
     world.cabinetDoor.rotation.y = THREE.MathUtils.damp(world.cabinetDoor.rotation.y, materialPhase === 'pickup' ? -Math.PI * 0.46 : 0, 7, step);
-    const definition = STEPS[state.stepIndex];
+    const definition = getStep(state);
     marker.visible = !state.complete && !definition?.automatic;
     const atReception = !definition || definition.target === 'reception';
     const atExit = definition?.target === 'exit';

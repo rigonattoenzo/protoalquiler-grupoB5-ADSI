@@ -9,6 +9,9 @@ test('entrada única, recepción accesible y espacio justo para el personal', as
   const { world } = await worldFixture(), { reception, room, navigation } = CONFIG;
   assert.ok(world.colliders.every(box => !overlapsCircle(navigation.spawn, navigation.radius, box)));
   const desk = world.colliders.find(box => box.id === 'Mostrador recepción');
+  const wall = world.colliders.find(box => box.id === 'Pared izquierda');
+  near(desk.minX, wall.maxX);
+  assert.ok(reception.width > 3.925 && reception.width < 4.4, 'Apenas más largo que un baño');
   const bathroom = world.colliders.find(box => box.id === 'BAÑO MUJERES');
   const clearance = desk.minZ - bathroom.maxZ;
   assert.ok(clearance >= 1.1 && clearance <= 1.3);
@@ -39,12 +42,21 @@ test('puestos junto a la pared, separación ampliada y armario junto al fondo', 
   near(cabinet.minZ, CONFIG.room.back + 0.025);
   assert.ok(cabinet.minX - (-4.075) > 1.5, 'Deja libre la puerta del depósito');
 });
-test('personas separadas, seis figuras y tres fichas físicas sobre el mostrador', async () => {
+test('recepción equipada, hoja única de tarifas y sillas libres centradas', async () => {
   const { world, scene } = await worldFixture();
   assert.notEqual(world.receptionist, world.technician);
   assert.ok(scene.getObjectByName('Cliente trabajando'));
   assert.equal(scene.children.filter(object => object.name.startsWith('Muestra vidriera')).length, 6);
-  assert.deepEqual(world.papers.map(object => object.userData.mode), ['assisted', 'autonomous', 'order']);
+  assert.equal(world.rateSheet.name, 'Hoja de tarifas');
+  assert.equal(scene.getObjectByName('Ficha modalidad 1'), undefined);
+  assert.ok(scene.getObjectByName('Silla Recepción')); assert.ok(scene.getObjectByName('Pantalla recepción'));
+  assert.ok(scene.getObjectByName('Lapicera recepción'));
+  assert.deepEqual([...world.seats.keys()], ['E1', 'E3']);
+  for (const [id, seat] of world.seats) {
+    const station = CONFIG.stations.find(item => item.id === id);
+    assert.ok(seat.position.x > station.x - 1 && seat.position.x < station.x + 1);
+  }
+  assert.equal(scene.children.filter(item => item.name === 'Junta vertical de habitaciones').length, 2);
 });
 test('la agrupación gráfica conserva pantallas y cabezales animables y paredes de corte independientes', async () => {
   const { world, scene } = await worldFixture();
@@ -57,6 +69,14 @@ test('la agrupación gráfica conserva pantallas y cabezales animables y paredes
   }
   world.setOverview(true); assert.equal(scene.getObjectByName('Pared derecha').visible, false);
   world.setOverview(false); assert.equal(scene.getObjectByName('Pared derecha').visible, true);
+});
+test('tarifario visible en el espacio entre E2 y E3, fuera del ancho de ambas impresoras', async () => {
+  const { scene, world } = await worldFixture();
+  const board = new THREE.Box3().setFromObject(scene.getObjectByName('Tarifario'));
+  const e2 = world.printers.get('E2'), e3 = world.printers.get('E3');
+  assert.ok(board.min.z > e3.z + 0.475);
+  assert.ok(board.max.z < e2.z - 0.475);
+  assert.ok(board.min.y > 1.26 && board.max.y < CONFIG.room.height);
 });
 test('el pasillo llega a los tres puestos y la vista general conserva límites', async () => {
   const { world, scene } = await worldFixture();

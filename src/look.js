@@ -1,6 +1,6 @@
 // Filtro de mirada independiente de Three.js y del DOM.
 export const LOOK_DEFAULTS = Object.freeze({
-  sensitivity: 0.0015,
+  sensitivity: 0.0021,
   maxMouseDelta: 160,
   maxQueuedAngle: Math.PI / 9,
   maxAngularSpeed: Math.PI,

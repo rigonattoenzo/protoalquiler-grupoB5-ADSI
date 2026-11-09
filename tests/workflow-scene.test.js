@@ -30,7 +30,7 @@ test('dos impresiones, piezas trasladadas a mesa y ensamblado sin duplicar geome
 });
 test('la mirada solo se activa al atender: recepción durante la conversación y técnico después del llamado', async t => {
   const { world, view, flow, until, frames } = await fixture(t);
-  const client = { x: -6.4, y: 1.65, z: 5.8 };
+  const client = { x: CONFIG.reception.x + 1, y: 1.65, z: 5.8 };
   const clerkHead = world.receptionist.getObjectByName('Cabeza'), techHead = world.technician.getObjectByName('Cabeza');
   for (let i = 0; i < 30; i += 1) view.update(0.05, flow.getState(), client);
   assert.equal(clerkHead.rotation.y, 0); assert.equal(techHead.rotation.y, 0);

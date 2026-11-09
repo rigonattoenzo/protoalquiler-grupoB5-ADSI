@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f4ead9" />
   <title>ProtoAlquiler 3D · Un taller de ideas</title>
-  <meta name="description" content="Recorrido del taller: recepción, diseño asistido, impresión de dos piezas y ensamblado." />
+  <meta name="description" content="Recorrido del taller: recepción, diseño asistido o autónomo, impresión de dos piezas y ensamblado." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%235c8066'/%3E%3Cpath d='m32 12 18 10v20L32 52 14 42V22Zm0 0v20m18-10L32 32 14 22m18 10v20' fill='none' stroke='%23fff3db' stroke-width='3'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./styles.css" />
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
@@ -32,7 +32,8 @@
     <h2>Controles</h2>
     <p><b>WASD / flechas</b> caminar · <b>Mouse</b> mirar</p>
     <p><b>E</b> hablar o interactuar con el objetivo</p>
-    <p><b>1 / 2 / 3</b> elegir una ficha en recepción</p>
+    <p><b>1 / 2 / 3</b> elegir modalidad al hablar en recepción</p>
+    <p><b>F</b> sentarte en una silla libre de E1 o E3 / levantarte. Sentado podés mirar y usar E.</p>
     <p><b>Esc</b> libera el mouse y muestra controles</p>
     <p><b>V</b> vista general · <b>R</b> entrada</p>
     <p><b>H</b> ocultar controles para grabar. Los globos de diálogo se conservan.</p>
@@ -43,9 +44,9 @@
     <span id="dialogue-speaker" class="speaker"></span>
     <p id="dialogue-text"></p>
     <div id="quote-detail" hidden></div>
-    <div id="service-menu" class="paper-choices" role="group" aria-label="Fichas de modalidad" hidden>
+    <div id="service-menu" class="paper-choices" role="group" aria-label="Modalidades de trabajo" hidden>
       <button type="button" data-mode="assisted"><b>1</b> Con asistencia</button>
-      <button type="button" data-mode="autonomous"><b>2</b> Por mi cuenta <small>Próximamente</small></button>
+      <button type="button" data-mode="autonomous"><b>2</b> Por mi cuenta</button>
       <button type="button" data-mode="order"><b>3</b> Por encargo <small>Próximamente</small></button>
     </div>
     <small id="dialogue-note"></small>

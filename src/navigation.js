@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { moveCircle, stepVertical } from './physics.js';
+import { moveCircle, overlapsCircle, stepVertical } from './physics.js';
 import { createLookController } from './look.js';
 
 /** Cámara del cliente, con WASD, mouse y colisiones independientes de la escena. */
@@ -21,6 +21,7 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
   let enabled = true;
   let suspended = document.hidden;
   let verticalVelocity = 0;
+  let seat = null, standingPoint = null, changingHeight = false;
 
   const clearInput = () => {
     keys.clear();
@@ -29,7 +30,7 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     look.reset({ yaw: lookEuler.y, pitch: lookEuler.x });
   };
   const onKeyDown = (event) => {
-    if (!enabled || suspended || !controls.isLocked || !movementKeys.has(event.code)) return;
+    if (!enabled || suspended || seat || !controls.isLocked || !movementKeys.has(event.code)) return;
     event.preventDefault();
     keys.add(event.code);
   };
@@ -80,10 +81,36 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
   controls.addEventListener('unlock', onUnlock);
 
   function reset() {
-    verticalVelocity = 0;
+    verticalVelocity = 0; seat = null; standingPoint = null; changingHeight = false;
     camera.position.set(config.spawn.x, config.eyeHeight, config.spawn.z);
     camera.rotation.set(0, config.spawn.yaw ?? 0, 0, 'YXZ');
     clearInput();
+  }
+
+  function canReach(point, obstacles) {
+    if (colliders.some(box => overlapsCircle(point, config.radius, box))) return false;
+    const reached = moveCircle(camera.position, { x: point.x - camera.position.x, z: point.z - camera.position.z }, config.radius, obstacles);
+    return Math.hypot(reached.x - point.x, reached.z - point.z) < 0.01;
+  }
+  function sit(nextSeat) {
+    if (seat || !enabled || !nextSeat || Math.hypot(camera.position.x - nextSeat.position.x, camera.position.z - nextSeat.position.z) > 1.15) return false;
+    const obstacles = colliders.filter(box => box !== nextSeat.collider);
+    const reached = moveCircle(camera.position, { x: nextSeat.position.x - camera.position.x, z: nextSeat.position.z - camera.position.z }, config.radius, obstacles);
+    if (Math.hypot(reached.x - nextSeat.position.x, reached.z - nextSeat.position.z) > 0.01) return false;
+    standingPoint = { x: camera.position.x, z: camera.position.z };
+    seat = nextSeat; changingHeight = true; verticalVelocity = 0;
+    camera.position.x = seat.position.x; camera.position.z = seat.position.z;
+    camera.lookAt(nextSeat.lookAt.x, nextSeat.lookAt.y + camera.position.y - nextSeat.eyeHeight, nextSeat.lookAt.z);
+    clearInput(); return true;
+  }
+  function stand() {
+    if (!seat) return false;
+    const { x, z } = seat.position, obstacles = colliders.filter(box => box !== seat.collider);
+    const candidates = [standingPoint, { x, z: z + 0.95 }, { x: x - 0.95, z }, { x: x + 0.95, z }];
+    const point = candidates.find(candidate => candidate && canReach(candidate, obstacles));
+    if (!point) return false;
+    camera.position.x = point.x; camera.position.z = point.z;
+    seat = null; standingPoint = null; changingHeight = true; verticalVelocity = 0; clearInput(); return true;
   }
 
   function update(dt) {
@@ -91,6 +118,12 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     const step = Math.min(Math.max(Number.isFinite(dt) ? dt : 0, 0), 0.05);
     const pose = look.update(step);
     if (pose.changed) camera.rotation.set(pose.pitch, pose.yaw, 0, 'YXZ');
+    if (changingHeight) {
+      const height = seat ? seat.eyeHeight : config.eyeHeight;
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, height, 12, step);
+      if (Math.abs(camera.position.y - height) < 0.001) { camera.position.y = height; changingHeight = false; }
+    }
+    if (seat) return; // Sentado se puede mirar e interactuar, pero WASD no arrastra la silla.
     const frontInput = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
     const sideInput = Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
 
@@ -110,15 +143,19 @@ export function createNavigation({ camera, domElement, colliders, config, onLock
     }, config.radius, colliders);
     camera.position.x = next.x;
     camera.position.z = next.z;
-    const vertical = stepVertical(camera.position.y, verticalVelocity, step, config.gravity, config.eyeHeight);
-    camera.position.y = vertical.height;
-    verticalVelocity = vertical.velocity;
+    if (!changingHeight) {
+      const vertical = stepVertical(camera.position.y, verticalVelocity, step, config.gravity, config.eyeHeight);
+      camera.position.y = vertical.height;
+      verticalVelocity = vertical.velocity;
+    }
   }
 
   reset();
   return {
     update,
-    reset,
+    reset, sit, stand,
+    get isSeated() { return Boolean(seat); },
+    get seatId() { return seat?.id ?? null; },
     enter() {
       if (!enabled || controls.isLocked) return;
       try {

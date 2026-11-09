@@ -47,7 +47,7 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   press('KeyE'); assert.equal(elements.get('service-menu').hidden, true, 'No abre opciones desde la entrada');
   renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1);
   press('KeyE'); assert.equal(elements.get('service-menu').hidden, false);
-  press('Digit2'); assert.equal(elements.get('service-menu').hidden, false, 'Modalidad pendiente no inicia un guion');
+  press('Digit3'); assert.equal(elements.get('service-menu').hidden, false, 'Modalidad pendiente no inicia un guion');
   press('Digit1'); assert.equal(elements.get('service-menu').hidden, true);
   const stationTitle = elements.get('flow-title').textContent;
   press('KeyE'); assert.equal(elements.get('flow-title').textContent, stationTitle, 'No avanza desde recepción en un paso de E1');
@@ -85,4 +85,36 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   assert.equal(elements.get('toolbar').inert, false);
   assert.equal(renderer.scene.getObjectByName('Bobina PLA disponible').visible, true);
   assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, false); assert.equal(elements.get('service-menu').hidden, true);
+
+  // Segunda toma: autonomía real en el diseño, sentarse sin bloquear E y
+  // revisión técnica solamente después de preparar los dos archivos.
+  renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1);
+  press('KeyE'); choices[1].click(); frames(1);
+  assert.equal(elements.get('service-menu').hidden, true);
+  const seatX = CONFIG.stations[0].x - 0.1, seatZ = CONFIG.stations[0].z + 1.23;
+  renderer.camera.position.set(seatX + 0.85, 1.65, seatZ);
+  press('KeyF'); frames(45); assert.ok(Math.abs(renderer.camera.position.y - 1.35) < 0.001);
+  assert.match(elements.get('view-label').textContent, /F para levantarte/);
+  press('KeyE'); frames(240);
+  assert.match(elements.get('flow-title').textContent, /Modelá la base/);
+  assert.match(elements.get('dialogue-speaker').textContent, /Computadora/);
+  assert.ok(Math.abs(renderer.scene.getObjectByName('Técnico').getObjectByName('Cabeza').rotation.y) < 0.01);
+  press('KeyE'); assert.match(elements.get('flow-title').textContent, /Modelá el respaldo/);
+  press('KeyE'); assert.match(elements.get('flow-title').textContent, /Prepará las dos piezas/);
+  assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, false, 'Diseñar el respaldo todavía no retira la base');
+  press('KeyE'); frames(650); assert.match(elements.get('flow-title').textContent, /Revisión y presupuesto/);
+  press('KeyE'); assert.match(elements.get('flow-title').textContent, /técnico prepara/);
+  for (let i = 0; i < 2400 && !/Imprimiendo la base/.test(elements.get('flow-title').textContent); i += 1) frames(1);
+  assert.match(elements.get('flow-title').textContent, /Imprimiendo la base/);
+  frames(450); press('KeyE'); assert.match(elements.get('flow-title').textContent, /Imprimiendo el respaldo/);
+  assert.equal(renderer.scene.getObjectByName('Base terminada sobre mesa').visible, true);
+  frames(450); press('KeyE'); frames(170); press('KeyE');
+  assert.equal(renderer.scene.getObjectByName('Bolsa con soporte en mano').visible, true);
+  press('KeyF'); frames(45); assert.ok(Math.abs(renderer.camera.position.y - 1.65) < 0.001);
+  renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1); press('KeyE');
+  renderer.camera.position.set(-4.7, 1.65, CONFIG.room.front + 0.5); frames(2);
+  assert.equal(elements.get('end-screen').hidden, false);
+  assert.match(elements.get('quote-detail').innerHTML, /11\.500/);
+  elements.get('end-restart').click(); frames(1);
+  assert.equal(renderer.scene.getObjectByName('Bobina PLA disponible').visible, true);
 });

@@ -16,7 +16,7 @@ async function start() {
   const [THREE, { CONFIG }, { createWorld }, { createNavigation }, flowModule, { createWorkflowScene }, { createWorkflowUI }, targets] = await Promise.all([
     import('three'), import('./config.js'), import('./world.js'), import('./navigation.js'), import('./workflow.js'), import('./workflow-scene.js'), import('./workflow-ui.js'), import('./workflow-targets.js'),
   ]);
-  const { createWorkflow, MODES, STEPS } = flowModule;
+  const { createWorkflow, MODES, getStep } = flowModule;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 90);
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.graphics.pixelRatio)); renderer.setSize(innerWidth, innerHeight);
@@ -25,6 +25,7 @@ async function start() {
   renderer.domElement.setAttribute('aria-label', 'Local 3D'); $('scene').append(renderer.domElement);
   scene.add(camera);
   const world = createWorld(scene), workflow = createWorkflow(), story = createWorkflowScene({ scene, world, camera });
+  const freeSeats = [...world.seats.values()];
   let mode = 'walk', receptionOpen = false, savedPosition, savedQuaternion;
   const updateControls = () => {
     if (fatal) return;
@@ -32,7 +33,7 @@ async function start() {
     document.body.classList.toggle('is-walking', locked);
     $('welcome').hidden = locked || workflow.getState().mode !== null || receptionOpen || mode === 'overview';
     $('crosshair').hidden = !locked || mode !== 'walk';
-    $('view-label').textContent = mode === 'overview' ? 'Vista general' : locked ? 'Recorrido libre' : 'En pausa';
+    $('view-label').textContent = mode === 'overview' ? 'Vista general' : navigation.isSeated ? 'En la estación · F para levantarte' : locked ? 'Recorrido libre' : 'En pausa';
     if (locked) { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); }
   };
   navigation = createNavigation({ camera, domElement: renderer.domElement, colliders: world.colliders, config: CONFIG.navigation, onLockChange: () => queueMicrotask(updateControls) });
@@ -46,15 +47,14 @@ async function start() {
   }
   function selectMode(id) {
     if (!receptionOpen || !targets.nearReception(camera.position)) return;
-    if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Por ahora podemos atenderte con diseño asistido en E1. El técnico te acompaña desde el diseño hasta la impresión.'); return; }
+    if (!MODES.find(item => item.id === id)?.available) { ui.say('receptionist', 'Por ahora podés usar E1 con asistencia o trabajar por tu cuenta. ¿Cuál preferís?'); return; }
     workflow.start(id); closeReception();
     if (!navigation.isLocked) navigation.enter();
   }
   function interact() {
     if (mode !== 'walk') return;
     if (receptionOpen) {
-      const paper = world.paperAtAim(camera);
-      if (paper) selectMode(paper); else ui.say('receptionist', 'Elegí una de las fichas del mostrador: 1 con asistencia, 2 por tu cuenta o 3 por encargo.');
+      ui.say('receptionist', 'En la hoja tenés las tarifas. Decime cómo querés trabajar: 1 con asistencia, 2 por tu cuenta o 3 por encargo.');
       return;
     }
     const state = workflow.getState();
@@ -65,8 +65,16 @@ async function start() {
       if (destination.waiting) ui.say('technician', 'Voy hacia E1. Si estoy en el paso, dejame un lugar para acercarme.');
       return;
     }
-    if (state.stepId === 'station') ui.say('client', 'Quiero un soporte para celular. ¿Me ayudás a diseñarlo?');
+    if (state.stepId === 'station') ui.say('client', state.mode === 'autonomous' ? 'Voy a diseñar un soporte para celular y preparar las dos piezas desde esta computadora.' : 'Quiero un soporte para celular. ¿Me ayudás a diseñarlo?');
     workflow.advance();
+  }
+  function nearbySeat() { return freeSeats.find(seat => Math.hypot(camera.position.x - seat.position.x, camera.position.z - seat.position.z) <= 1.15); }
+  function toggleSeat() {
+    if (mode !== 'walk' || receptionOpen) return;
+    if (navigation.isSeated) {
+      if (!navigation.stand()) showStatus('No hay espacio libre para levantarte. Esperá a que se despeje el paso.');
+    } else if (!navigation.sit(nearbySeat())) showStatus('Acercate a una silla libre de E1 o E3 para sentarte.');
+    updateControls();
   }
   function walk(capture = true) {
     if (workflow.getState().complete) return;
@@ -79,7 +87,7 @@ async function start() {
     if (workflow.getState().complete) return;
     if (mode === 'overview') { walk(); return; }
     closeReception(); savedPosition = camera.position.clone(); savedQuaternion = camera.quaternion.clone();
-    world.player.position.set(camera.position.x, 0, camera.position.z); world.player.rotation.y = camera.rotation.y;
+    world.player.position.set(camera.position.x, 0, camera.position.z); world.player.rotation.y = navigation.isSeated ? 0 : camera.rotation.y; world.setPlayerSeated(navigation.isSeated);
     mode = 'overview'; navigation.setEnabled(false); world.setOverview(true);
     camera.position.set(...CONFIG.overview.position); camera.lookAt(...CONFIG.overview.target); camera.fov = 46; camera.updateProjectionMatrix(); updateControls();
   }
@@ -105,6 +113,7 @@ async function start() {
     const number = ['Digit1', 'Digit2', 'Digit3', 'Numpad1', 'Numpad2', 'Numpad3'].indexOf(event.code);
     if (number >= 0 && receptionOpen) { event.preventDefault(); selectMode(MODES[number % 3].id); }
     if (event.code === 'KeyE') { event.preventDefault(); interact(); }
+    if (event.code === 'KeyF') { event.preventDefault(); toggleSeat(); }
     if (event.code === 'KeyV') { event.preventDefault(); overview(); }
     if (event.code === 'KeyR') { event.preventDefault(); resetCamera(); }
     if (event.code === 'KeyH') { event.preventDefault(); document.body.classList.toggle('ui-hidden'); }
@@ -123,13 +132,17 @@ async function start() {
     if (mode === 'walk' && state.stepId === 'exit' && targets.atExit(camera.position)) workflow.finish();
     state = workflow.getState();
     if (receptionOpen && !targets.nearReception(camera.position)) closeReception();
-    const destination = target(), step = STEPS[state.stepIndex];
+    const destination = target(), step = getStep(state);
     ui.render(state, destination, { dt, mode, locked: navigation.isLocked, materialStatus: story.materialStatus });
-    const hint = mode !== 'walk' || state.complete || state.stepId === 'exit' ? null : receptionOpen ? 'Elegí una ficha · 1 / 2 / 3 · o mirala y E'
+    let hint = mode !== 'walk' || state.complete || state.stepId === 'exit' ? null : receptionOpen ? 'Elegí una opción · 1 / 2 / 3 · Esc para usar los botones'
       : !state.mode && targets.nearReception(camera.position) ? 'E · Hablar con recepción'
         : destination.waiting ? 'El técnico viene hacia E1'
           : destination.nearTarget && step?.action ? 'E · ' + step.action
-            : step?.automatic ? step.title + ' · ' + Math.round(state.progress * 100) + '%' : null;
+            : step?.automatic ? step.title + (step.sceneDriven ? '' : ' · ' + Math.round(state.progress * 100) + '%') : null;
+    if (mode === 'walk' && !state.complete && !receptionOpen) {
+      const seatHint = navigation.isSeated ? 'F · Levantarte' : nearbySeat() ? 'F · Sentarte' : '';
+      if (seatHint) hint = hint ? hint + ' · ' + seatHint : seatHint;
+    }
     ui.setHint(hint);
     const zone = mode === 'overview' ? 'Distribución del taller' : world.getZone(camera.position);
     if (zone !== lastZone) { $('zone-label').textContent = zone; lastZone = zone; }

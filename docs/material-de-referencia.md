@@ -29,6 +29,8 @@ Algunas demostraciones incrementan posiciones por fotograma. Para que la velocid
 
 Los ejemplos se consultaron como referencia: no se copiaron sus modelos, texturas, sonidos ni bibliotecas al producto. El archivo de consulta local dentro de `.reference/` debe quedar fuera de Git. La licencia de la biblioteca distribuida con el proyecto se conserva junto a sus archivos.
 
+En el hito 5 se volvieron a leer 6.2 y 14 para sumar el recorrido autónomo y las posturas. Las plantas comparten una geometría, los detalles estáticos entran en la agrupación de mobiliario y los carteles se dibujan una sola vez en texturas locales. Sentarse cambia el estado de navegación y la pose visual de forma separada. La transición de altura, la mirada y los movimientos del técnico siguen usando tiempo transcurrido. F2 permite comprobar la carga en la computadora de grabación; estas decisiones no garantizan una tasa de FPS sin medirla allí.
+
 ## Criterios del plano a conservar
 
 - La entrada única queda a la izquierda del frente. El visitante rodea el extremo derecho del mostrador para llegar a las estaciones; no necesita atravesar el espacio del personal.

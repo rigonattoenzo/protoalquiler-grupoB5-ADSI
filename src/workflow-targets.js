@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { STEPS } from './workflow.js';
+import { getStep } from './workflow.js';
 
 export function nearReception(position) {
   const desk = CONFIG.reception;
@@ -10,7 +10,7 @@ export function atExit(position) {
   return position.x > -5.6 && position.x < -3.8 && position.z > CONFIG.room.front + 0.3;
 }
 export function getWorkflowTarget(state, position, { mode = 'walk', menuOpen = false, assistantReady = true } = {}) {
-  const step = STEPS[state.stepIndex];
+  const step = getStep(state);
   const reception = !step || step.target === 'reception', exit = step?.target === 'exit';
   const point = exit ? { x: -4.7, z: CONFIG.room.front + 0.5 } : reception ? { x: CONFIG.reception.x, z: CONFIG.reception.z + 1.15 } : CONFIG.workstation.center;
   const e1 = CONFIG.stations[0];
