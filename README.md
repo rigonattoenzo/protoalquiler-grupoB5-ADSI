@@ -60,7 +60,7 @@ También tiene **9 confirmaciones con E** después de elegir modalidad. Usa los 
 
 La notificación pertenece a la simulación, sin enviar mensajes reales. El modelado y la fabricación del encargo se representan con saltos temporales y una vista del diseño; no se espera el tiempo real ni se agrega otro recorrido por E1. Mientras se muestra el mensaje quedan pausados el movimiento y los controles de cámara; el botón **Reiniciar recorrido** sigue disponible. Los botones se pueden usar con teclado; 1 autoriza, 2 deja en espera y Enter permite regresar desde la confirmación de retiro.
 
-Los globos sobre los personajes del local tienen una aparición muy breve de **130 ms**, desde el punto cercano a la cabeza hasta su posición, con un desplazamiento y escala mínimos. Se anima al aparecer o cambiar el mensaje; la animación no se repite al caminar o proyectar su posición. Las animaciones respetan la preferencia del navegador de reducir movimiento.
+Los globos sobre los personajes del local tienen una aparición breve de **220 ms**, desde el punto cercano a la cabeza hasta su posición, con desplazamiento de 18 px y crecimiento del 84 % al tamaño normal. Se anima al aparecer o cambiar el mensaje; la animación no se repite al caminar o proyectar su posición. Con reducción de movimiento se conserva solo el fundido, sin escala ni desplazamiento. El grupo confirmó visualmente este ajuste.
 
 **Las tres modalidades están implementadas.** En los casos presenciales se cobra tiempo de estación y material. El encargo conserva un presupuesto por trabajo independiente: el tiempo fuera del local no suma minutos ni importes de estación.
 
@@ -168,7 +168,7 @@ npm test
 
 Las pruebas cubren los tres recorridos completos, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, referencias, anticipo, espera sin autorización, regreso/retirada, técnico y colisiones, sentarse/levantarse, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Ver [estado de la iteración actual](docs/estado-hito-9.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
+Ver [estado de la iteración actual](docs/estado-hito-10.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
 ## GitHub y próximos pasos
 
@@ -179,7 +179,7 @@ git add .
 git commit -m "Describe el cambio"
 ```
 
-La revisión anterior (autónomo y ambientación) está publicada. Esta iteración de encargo se guarda en un commit local para revisión; el push espera el okey final del usuario. Para publicar commits locales aprobados, ejecutar `git push`.
+El usuario confirmó la última animación y autorizó subir todos los commits pendientes del encargo y sus refinamientos. Para publicar commits locales aprobados, ejecutar `git push`.
 
 El material docente en `.reference/` y los ZIP están excluidos de Git. Subir el código al repositorio no publica automáticamente una web; la aplicación se ejecuta con Live Server.
 

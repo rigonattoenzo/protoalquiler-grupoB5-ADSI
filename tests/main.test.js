@@ -17,6 +17,8 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
     querySelectorAll() { return []; }
     focus() { this.focused = true; }
     click() { this.dispatchEvent(new Event('click')); }
+    animations = [];
+    animate(frames, options) { const animation = { frames, options, cancelled: false, cancel() { this.cancelled = true; } }; this.animations.push(animation); return animation; }
   }
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const elements = new Map([...html.matchAll(/id="([^"]+)"/g)].map(match => [match[1], new Element()]));
@@ -47,12 +49,21 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   press('KeyE'); assert.equal(elements.get('service-menu').hidden, true, 'No abre opciones desde la entrada');
   renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1);
   press('KeyE'); assert.equal(elements.get('service-menu').hidden, false);
+  const speech = elements.get('dialogue');
+  assert.ok(speech.animations.length > 0, 'La aparición de recepción dispara la animación');
+  const receptionAnimation = speech.animations.at(-1);
+  assert.equal(receptionAnimation.frames[0].opacity, 0); assert.equal(receptionAnimation.frames.at(-1).opacity, 1);
+  assert.equal(receptionAnimation.options.duration, 220); assert.equal(receptionAnimation.options.fill, 'both');
+  assert.match(receptionAnimation.frames[0].transform, /scale\(0\.84\)/);
+  const count = speech.animations.length; frames(30); assert.equal(speech.animations.length, count, 'La proyección no reinicia la aparición cada cuadro');
   press('Digit9'); assert.equal(elements.get('service-menu').hidden, false, 'Una tecla ajena a las opciones no inicia un guion');
   press('Digit1'); assert.equal(elements.get('service-menu').hidden, true);
   const stationTitle = elements.get('flow-title').textContent;
   press('KeyE'); assert.equal(elements.get('flow-title').textContent, stationTitle, 'No avanza desde recepción en un paso de E1');
   renderer.camera.position.set(CONFIG.workstation.target.x, 1.65, CONFIG.workstation.target.z);
   press('KeyE'); frames(360);
+  assert.equal(elements.get('dialogue-speaker').textContent, 'Asistente técnico');
+  assert.ok(speech.animations.length > count + 1, 'También se anima la intervención del técnico');
   press('KeyE'); assert.match(elements.get('flow-title').textContent, /Revisión y presupuesto/);
   assert.doesNotMatch(elements.get('dialogue-note').textContent, /fictici|ilustrativ|ejemplo/i);
   press('KeyE'); assert.match(elements.get('flow-title').textContent, /técnico prepara/);
@@ -168,4 +179,9 @@ test('entrada sin menú, charla en mostrador, tutorial, impresiones, ensamblado 
   elements.get('end-restart').click(); frames(1);
   assert.equal(renderer.scene.getObjectByName('Referencias entregadas al técnico').visible, false);
   assert.equal(elements.get('order-screen').hidden, true);
+  win.matchMedia = () => ({ matches: true });
+  renderer.camera.position.set(CONFIG.reception.x, 1.65, CONFIG.reception.z + 1.1); press('KeyE');
+  const reducedAnimation = speech.animations.at(-1);
+  assert.equal(reducedAnimation.options.duration, 220);
+  assert.ok(reducedAnimation.frames.every(frame => !Object.hasOwn(frame, 'transform')), 'Reducir movimiento mantiene el fundido sin escala ni desplazamiento');
 });

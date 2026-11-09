@@ -9,11 +9,12 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
   function animateSpeech() {
     if (!introduce) return;
     introduce = false; speechAnimation?.cancel();
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
-    speechAnimation = bubble.animate?.([
-      { opacity: 0, transform: 'translate(-50%, calc(-100% + 8px)) scale(0.94)' },
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const frames = reduced ? [{ opacity: 0 }, { opacity: 1 }] : [
+      { opacity: 0, transform: 'translate(-50%, calc(-100% + 18px)) scale(0.84)' },
       { opacity: 1, transform: 'translate(-50%, -100%) scale(1)' },
-    ], { duration: 130, easing: 'cubic-bezier(.2,.75,.25,1)' });
+    ];
+    speechAnimation = bubble.animate?.(frames, { duration: 220, easing: 'cubic-bezier(.2,.65,.3,1)', fill: 'both' });
   }
   [...$('service-menu').querySelectorAll('[data-mode]')].forEach(button => button.addEventListener('click', () => onSelectMode(button.dataset.mode)));
   $('flow-action').addEventListener('click', onAction);
