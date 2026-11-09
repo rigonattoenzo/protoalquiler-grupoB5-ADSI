@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DEMO, getStep, getQuote, money } from './workflow.js';
+import { DEMO, getStep, getQuote, getOrderQuote, money } from './workflow.js';
 
 export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
   const $ = id => document.getElementById(id), bubble = $('dialogue');
@@ -12,6 +12,7 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
   // Solo constantes del guion; los diálogos se escriben con textContent.
   $('quote-detail').innerHTML = '<div><span>Estación / ' + DEMO.representedMinutes + ' min</span><b>' + money(quote.station) + '</b></div><div><span>PLA / ' + DEMO.grams + ' g</span><b>' + money(quote.material) + '</b></div><div class="total"><span>Total</span><b>' + money(quote.total) + '</b></div>';
   return {
+    reset() { flash = null; key = ''; menuOpen = false; $('service-menu').hidden = true; },
     setMenuOpen(value) { menuOpen = Boolean(value); key = ''; $('service-menu').hidden = !menuOpen; },
     say(who, text, seconds = 3.5) { flash = { who, text, remaining: seconds }; key = ''; },
     render(state, target, { dt = 0, mode = 'walk', locked = false, materialStatus = 'idle' } = {}) {
@@ -28,12 +29,16 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
           ? '¡Hola! La estación cuesta ' + money(DEMO.hourlyRate) + '/hora y el PLA ' + money(DEMO.pricePerGram) + '/g. En la hoja tenés las tres modalidades. ¿Cómo querés trabajar?'
           : target.waiting ? state.mode === 'autonomous' ? 'Ya recibí tu solicitud. Voy a E1 para revisar los dos archivos y preparar el material.' : 'Ya voy a E1. Dejame pasar y me quedo con vos durante el trabajo.'
             : step?.dialogue || '¡Hola! Acercate al mostrador y conversamos sobre tu proyecto.');
-        $('dialogue-note').textContent = menuOpen ? 'PC, impresora y asistencia básica incluidas' : ['confirm', 'checkout'].includes(state.stepId) ? 'Material incluido el auxiliar · uso de estación y PLA' : '';
-        $('quote-detail').hidden = !['confirm', 'checkout'].includes(state.stepId);
+        const order = state.mode === 'order', orderQuote = getOrderQuote();
+        $('dialogue-note').textContent = menuOpen ? 'PC, impresora y asistencia básica incluidas' : order ? 'Presupuesto por trabajo · anticipo descontado del total' : ['confirm', 'checkout'].includes(state.stepId) ? 'Material incluido el auxiliar · uso de estación y PLA' : '';
+        $('quote-detail').innerHTML = order
+          ? '<div><span>' + (state.stepId === 'order-estimate' ? 'Estimación del trabajo' : 'Total del encargo') + '</span><b>' + money(state.stepId === 'order-estimate' ? orderQuote.estimate : orderQuote.total) + '</b></div><div><span>Anticipo</span><b>' + money(orderQuote.deposit) + '</b></div><div class="total"><span>Saldo al retirar</span><b>' + money(state.stepId === 'order-estimate' ? orderQuote.estimate - orderQuote.deposit : orderQuote.balance) + '</b></div>'
+          : '<div><span>Estación / ' + DEMO.representedMinutes + ' min</span><b>' + money(quote.station) + '</b></div><div><span>PLA / ' + DEMO.grams + ' g</span><b>' + money(quote.material) + '</b></div><div class="total"><span>Total</span><b>' + money(quote.total) + '</b></div>';
+        $('quote-detail').hidden = !['confirm', 'checkout', 'order-estimate', 'order-pickup'].includes(state.stepId);
         $('service-menu').hidden = !menuOpen;
         bubble.classList.toggle('client', speaker === 'client');
-        $('flow-guide').hidden = !step || menuOpen || state.complete;
-        $('flow-step-label').textContent = !step ? '' : step.target === 'exit' ? 'SALIDA' : step.target === 'reception' ? 'RECEPCIÓN' : step.id === 'material' ? 'MATERIAL' : step.id === 'confirm' ? 'PRESUPUESTO' : step.id === 'prepare' ? 'LAMINADO' : step.id.includes('design') || step.id.includes('review') ? 'DISEÑO' : step.id.includes('printing') || step.id.includes('ready') ? 'IMPRESIÓN' : 'E1';
+        $('flow-guide').hidden = !step || menuOpen || state.complete || state.orderAway;
+        $('flow-step-label').textContent = !step ? '' : step.target === 'technician' ? 'ENCARGO' : step.target === 'exit' ? 'SALIDA' : step.target === 'reception' ? 'RECEPCIÓN' : step.id === 'material' ? 'MATERIAL' : step.id === 'confirm' ? 'PRESUPUESTO' : step.id === 'prepare' ? 'LAMINADO' : step.id.includes('design') || step.id.includes('review') ? 'DISEÑO' : step.id.includes('printing') || step.id.includes('ready') ? 'IMPRESIÓN' : 'E1';
         $('flow-title').textContent = target.waiting ? 'Esperá al técnico junto a E1' : step?.title || '';
         $('flow-action').textContent = step?.action || 'En curso…';
         $('flow-action').disabled = !target.nearTarget || !step?.action;
@@ -42,7 +47,7 @@ export function createWorkflowUI({ world, camera, onSelectMode, onAction }) {
       const anchor = speaker === 'technician' ? world.technician : speaker === 'computer' ? world.screens.get('E1') : speaker === 'printer' ? world.printers.get('E1').gantry : world.receptionist;
       const distance = camera.position.distanceTo(anchor.position);
       const active = mode === 'walk' && (menuOpen || flash || state.mode || distance < 3.2);
-      const hidden = state.complete || !active || (distance > 6.5 && !menuOpen && speaker !== 'client');
+      const hidden = state.complete || state.orderAway || !active || (distance > 6.5 && !menuOpen && speaker !== 'client');
       if (bubble.hidden !== hidden) { bubble.hidden = hidden; if (!hidden) bubbleHeight = bubble.offsetHeight || 190; }
       if (bubble.hidden) return;
       projectionTime += dt;

@@ -24,7 +24,7 @@ export function createMonitorDisplay(screen, { occupied = false } = {}) {
     ctx.fillStyle = level >= 1 ? '#a6d3ab' : '#78928c'; ctx.fillText('01  Base + ranura', 17, 153);
     ctx.fillStyle = level >= 2 ? '#a6d3ab' : '#78928c'; ctx.fillText('02  Respaldo', 17, 198);
     ctx.font = '17px system-ui'; ctx.fillStyle = '#78928c';
-    ctx.fillText('PLA / ' + DEMO.colorName, 17, 480); ctx.fillText(state.mode === 'autonomous' ? 'Diseño autónomo' : 'Diseño asistido', 17, 516);
+    ctx.fillText('PLA / ' + DEMO.colorName, 17, 480); ctx.fillText(state.mode === 'order' ? 'Trabajo por encargo' : state.mode === 'autonomous' ? 'Diseño autónomo' : 'Diseño asistido', 17, 516);
     const project = (x, y, z) => {
       const angle = Math.sin(elapsed * 0.25) * 0.18;
       const rx = x * Math.cos(angle) - z * Math.sin(angle), rz = x * Math.sin(angle) + z * Math.cos(angle);

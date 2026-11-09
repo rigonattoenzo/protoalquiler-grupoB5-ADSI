@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { createCharacter } from './character.js';
 import { DEMO, money } from './workflow.js';
-import { addDecorations, applyFloorTexture, drawRoomPictogram } from './decorations.js';
+import { addDecorations, applyFloorTexture, drawRoomPictogram, drawProcessPoster } from './decorations.js';
 
 export function createWorld(scene) {
   const { colors, room, reception, cabinet } = CONFIG;
@@ -203,7 +203,7 @@ export function createWorld(scene) {
     ctx.font = '500 30px system-ui'; ctx.fillText('Encargos: presupuesto por trabajo', 512, 612);
   } });
   rateSign.name = 'Tarifario'; cutaway.push(rateSign);
-  const poster = sign('DE LA IDEA A LA PIEZA\n01 DISEÑÁ · 02 PREPARÁ · 03 IMPRIMÍ\nProbá. Ajustá. Volvé a crear.', { x: room.right - 0.055, y: 2.5, z: 2.5, width: 1.8, height: 0.75, rotation: -Math.PI / 2, background: '#e6c6a5', color: '#453f3c', fontSize: 48 });
+  const poster = sign('', { x: room.right - 0.055, y: 2.5, z: 2.5, width: 1.8, height: 0.75, rotation: -Math.PI / 2, draw: drawProcessPoster });
   poster.name = 'Póster del proceso'; cutaway.push(poster);
   const frame = box('Marco póster', [0.035, 0.84, 1.89], [room.right - 0.035, 2.5, 2.5], colors.wood); cutaway.push(frame);
   const entryLabel = sign('ACCESO ÚNICO', { x: -4.7, y: 0.04, z: room.front + 0.5, width: 2, height: 0.3, fontSize: 60 }); entryLabel.rotation.x = -Math.PI / 2;

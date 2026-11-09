@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f4ead9" />
   <title>ProtoAlquiler 3D · Un taller de ideas</title>
-  <meta name="description" content="Recorrido del taller: recepción, diseño asistido o autónomo, impresión de dos piezas y ensamblado." />
+  <meta name="description" content="Recorridos de ProtoAlquiler: diseño asistido, autónomo y piezas por encargo." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%235c8066'/%3E%3Cpath d='m32 12 18 10v20L32 52 14 42V22Zm0 0v20m18-10L32 32 14 22m18 10v20' fill='none' stroke='%23fff3db' stroke-width='3'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./styles.css" />
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
@@ -47,7 +47,7 @@
     <div id="service-menu" class="paper-choices" role="group" aria-label="Modalidades de trabajo" hidden>
       <button type="button" data-mode="assisted"><b>1</b> Con asistencia</button>
       <button type="button" data-mode="autonomous"><b>2</b> Por mi cuenta</button>
-      <button type="button" data-mode="order"><b>3</b> Por encargo <small>Próximamente</small></button>
+      <button type="button" data-mode="order"><b>3</b> Por encargo</button>
     </div>
     <small id="dialogue-note"></small>
   </aside>
@@ -59,6 +59,22 @@
   <div id="crosshair" aria-hidden="true" hidden></div>
   <p id="status-message" role="status" aria-live="polite" hidden></p>
   <output id="performance-panel" aria-label="Diagnóstico de rendimiento" hidden></output>
+  <section id="order-screen" class="order-screen" role="dialog" aria-modal="true" aria-labelledby="order-title" hidden>
+    <div class="order-message">
+      <p id="order-time" class="eyebrow"></p><h2 id="order-title"></h2><p id="order-text"></p>
+      <svg id="order-preview" viewBox="0 0 320 145" role="img" aria-label="Diseño del soporte para celular, base y respaldo encastrados" hidden>
+        <path d="m80 105 105 15 67-28-106-14Z" fill="#95b59c" stroke="#5c8066" stroke-width="2"/>
+        <path d="m123 96 15-68 75 11-14 68Z" fill="#bad0b7" stroke="#5c8066" stroke-width="2"/>
+        <path d="m124 99 76 11 5-12-77-11Z" fill="#789d81" stroke="#5c8066" stroke-width="2"/>
+        <path d="m70 130 180 0" stroke="#dbc7a7" stroke-width="2"/>
+      </svg>
+      <div id="order-quote" hidden></div>
+      <p id="order-deferred" class="order-deferred" role="status" hidden>La impresión queda en espera. No empezamos hasta que la autorices.</p>
+      <div id="order-decisions" class="order-decisions" hidden><button id="order-approve" type="button" class="primary">Sí, autorizar impresión</button><button id="order-defer" type="button">Todavía no</button></div>
+      <button id="order-return" type="button" class="primary" hidden>Ir a retirar · Al día siguiente →</button>
+      <button id="order-restart" type="button" class="order-restart">Reiniciar recorrido</button>
+    </div>
+  </section>
   <section id="end-screen" class="end-screen" role="dialog" aria-modal="true" aria-labelledby="end-title" hidden>
     <div><p class="eyebrow">ProtoAlquiler 3D</p><h2 id="end-title">Tu idea, hecha realidad.</h2><p>Te llevás tu soporte. Gracias por visitar nuestro taller.</p><button id="end-restart" class="primary" type="button">Volver a recorrer →</button></div>
   </section>

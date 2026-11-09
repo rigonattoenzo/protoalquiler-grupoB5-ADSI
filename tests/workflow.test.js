@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorkflow, STEPS, AUTONOMOUS_STEPS, getStep, DEMO, MODES, getQuote } from '../src/workflow.js';
+import { createWorkflow, STEPS, AUTONOMOUS_STEPS, getStep, DEMO, MODES, getQuote, getOrderQuote } from '../src/workflow.js';
 const finishAnimation = flow => { for (let i = 0; i < 200; i += 1) flow.tick(0.1); };
 test('tres modalidades claras, secuencia asistida con revisión y dos impresiones', () => {
   assert.equal(MODES.length, 3); const flow = createWorkflow();
-  assert.equal(flow.start('order'), false); assert.equal(flow.advance(), false); flow.start('assisted');
+  assert.equal(flow.start('unknown'), false); assert.equal(flow.advance(), false); flow.start('assisted');
   for (const step of STEPS) {
     assert.equal(flow.getState().stepId, step.id);
     if (step.sceneDriven) { assert.equal(flow.advance(), false); flow.completeMaterial(); }
@@ -17,6 +17,32 @@ test('tres modalidades claras, secuencia asistida con revisión y dos impresione
   }
   const state = flow.getState(); assert.ok(state.complete && state.assembled && state.baseOnTable && state.backOnTable);
   assert.equal(flow.advance(), false);
+});
+test('encargo exige anticipo, salida y autorización antes del retiro; presupuesto independiente', () => {
+  const flow = createWorkflow(); assert.equal(flow.start('order'), true);
+  assert.deepEqual(getOrderQuote(), { estimate: 15000, total: 15000, deposit: 5000, balance: 10000 });
+  assert.equal(getQuote().total, 11500);
+  assert.equal(flow.approveOrder(), false); assert.equal(flow.returnForOrder(), false); assert.equal(flow.leaveForOrder(), false);
+  flow.advance(); assert.equal(flow.getState().referencesReceived, true); assert.equal(flow.getState().depositPaid, false);
+  flow.advance(); assert.equal(flow.getState().depositPaid, true); assert.equal(flow.getState().orderAway, false);
+  assert.equal(flow.advance(), false); assert.equal(flow.getState().stepId, 'order-leave');
+  assert.equal(flow.leaveForOrder(), true); assert.equal(flow.leaveForOrder(), false);
+  assert.equal(flow.getState().orderAway, true); assert.equal(flow.approveOrder(), false);
+  finishAnimation(flow); assert.equal(flow.getState().stepId, 'order-approval');
+  assert.equal(flow.getState().confirmed, false); assert.equal(flow.getState().basePrinted, false);
+  assert.equal(flow.deferOrder(), true); assert.equal(flow.deferOrder(), false);
+  finishAnimation(flow); assert.equal(flow.getState().stepId, 'order-approval'); assert.equal(flow.returnForOrder(), false);
+  assert.equal(flow.approveOrder(), true); assert.equal(flow.approveOrder(), false);
+  assert.equal(flow.getState().orderApproved, true); assert.equal(flow.getState().hasBag, false);
+  assert.equal(flow.returnForOrder(), true); assert.equal(flow.returnForOrder(), false);
+  assert.equal(flow.getState().orderAway, false); assert.equal(flow.getState().assembled, true);
+  flow.advance(); assert.equal(flow.getState().hasBag, true); assert.equal(flow.getState().stepId, 'exit');
+  flow.finish(); assert.equal(flow.getState().complete, true); assert.deepEqual(getOrderQuote(), { estimate: 15000, total: 15000, deposit: 5000, balance: 10000 });
+});
+test('reiniciar un encargo pendiente limpia el anticipo y la autorización de la toma', () => {
+  const flow = createWorkflow(); flow.start('order'); flow.advance(); flow.advance(); flow.leaveForOrder(); finishAnimation(flow); flow.deferOrder();
+  flow.reset(); assert.equal(flow.getState().mode, null);
+  flow.start('order'); assert.equal(flow.getState().depositPaid, false); assert.equal(flow.getState().orderApproved, false); assert.equal(flow.getState().orderDeferred, false);
 });
 test('tiempo visual acotado, sin saltos por dt inválido ni avance al caminar', () => {
   const flow = createWorkflow(); flow.start('assisted');

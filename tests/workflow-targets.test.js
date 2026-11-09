@@ -8,6 +8,16 @@ test('primero se entra y se camina: las opciones no se ofrecen desde la puerta n
   assert.equal(nearReception({ x: CONFIG.reception.x, z: CONFIG.reception.staffZ }), false);
   assert.equal(nearReception({ x: CONFIG.reception.x, z: CONFIG.reception.z + 1.1 }), true);
 });
+test('el encargo se conversa con el técnico donde está, y el retiro se hace en recepción', () => {
+  const flow = createWorkflow(); flow.start('order'); const technicianPosition = { x: -2, z: -2 };
+  assert.equal(getWorkflowTarget(flow.getState(), { x: -1, z: -2 }, { technicianPosition }).nearTarget, true);
+  assert.equal(getWorkflowTarget(flow.getState(), CONFIG.workstation.target, { technicianPosition }).nearTarget, false);
+  flow.advance(); flow.advance(); flow.leaveForOrder();
+  assert.equal(getWorkflowTarget(flow.getState(), CONFIG.workstation.target).nearTarget, false);
+  for (let i = 0; i < 100; i += 1) flow.tick(0.1);
+  flow.approveOrder(); flow.returnForOrder();
+  assert.equal(getWorkflowTarget(flow.getState(), { x: CONFIG.reception.x, z: CONFIG.reception.z + 1.1 }).nearTarget, true);
+});
 test('la salida requiere cruzar el acceso único, no acercarse a una vidriera', () => {
   assert.equal(atExit({ x: -4.7, z: CONFIG.room.front - 0.1 }), false);
   assert.equal(atExit({ x: -4.7, z: CONFIG.room.front + 0.5 }), true);

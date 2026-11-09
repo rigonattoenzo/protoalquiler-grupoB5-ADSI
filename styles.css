@@ -43,6 +43,19 @@ body.is-walking #toolbar, body.is-walking .scene-state { display: none; }
 #quote-detail { padding: 8px 0; margin-top: 5px; border-top: 1px solid #e4d6bf; font-size: 11px; }
 #quote-detail div { display: flex; justify-content: space-between; padding: 3px 0; }
 #quote-detail .total { border-top: 1px solid #e4d6bf; padding-top: 7px; margin-top: 4px; font-weight: 700; }
+.order-screen { position: fixed; inset: 0; z-index: 24; display: grid; place-items: center; background: #101411; padding: 24px; overflow-y: auto; }
+.order-message { width: min(460px, 100%); padding: 28px; border: 1px solid #72816a; border-radius: 18px; background: #fff8e9; box-shadow: 0 18px 100px #0008; }
+.order-message h2 { font-size: 28px; letter-spacing: -.7px; margin: 0 0 14px; }
+.order-message > p:not(.eyebrow) { font-size: 13px; line-height: 1.7; }
+#order-preview { display: block; width: 100%; max-height: 135px; border-radius: 8px; background: #f2e8d5; margin: 18px 0; }
+#order-quote { font-size: 12px; margin: 14px 0; }
+#order-quote > div { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; }
+#order-quote .total { border-top: 1px solid #d8c4a6; font-weight: 700; }
+.order-decisions { display: flex; align-items: center; gap: 10px; }
+.order-decisions .primary { flex: 1; width: auto; }
+#order-defer { border: 1px solid #d6c7ac; border-radius: 7px; padding: 12px; background: transparent; font-size: 12px; }
+.order-deferred { padding: 10px; border-radius: 7px; background: #e7ecd8; }
+.order-restart { display: block; margin: 10px auto 0; border: 0; background: transparent; color: #82735d; font-size: 10px; text-decoration: underline; }
 .objective { position: fixed; z-index: 6; left: 50%; bottom: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 40px); width: max-content; padding: 9px 14px; border-radius: 8px; color: #fff8e6; background: #4a5147df; font-size: 11px; }
 #flow-step-label { color: #c2d0ad; font-size: 9px; }
 #flow-action { border: 0; border-radius: 4px; background: #f8edd6; color: #5b6552; padding: 6px 9px; font-size: 10px; }

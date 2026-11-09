@@ -1,9 +1,9 @@
 {
   "name": "protoalquiler-3d",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
-  "description": "Simulación de ProtoAlquiler 3D: diseño asistido y autónomo, impresión y ensamblado.",
+  "description": "Simulación de ProtoAlquiler 3D: diseño asistido, autónomo y piezas por encargo.",
   "scripts": {
     "start": "node scripts/serve.mjs",
     "test": "node --test",

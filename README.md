@@ -47,7 +47,20 @@ Recepción mira al cliente solo mientras ofrece opciones o atiende el cobro. El 
 
 También tiene **9 confirmaciones con E** después de elegir modalidad. Usa los mismos minutos, material y presupuesto del caso asistido: no se inventó un descuento por trabajar con autonomía. Los mensajes de diseño están anclados a la PC, los de impresión a la impresora y los de revisión al técnico.
 
-**Diseño con asistencia y diseño autónomo están implementados.** Encargo sigue marcado “Próximamente”. La hoja y el cartel indican presupuesto por trabajo para esa modalidad, cuya tarifa específica todavía no fue definida.
+## Recorrido por encargo completo
+
+1. Conversá con recepción y elegí **3: Por encargo**. Seguí el indicador hasta el técnico, donde se encuentre.
+2. Con E le entregás las referencias del soporte. Se ve la hoja con el dibujo pasando a sus manos; el técnico se queda para atenderte.
+3. Aceptá la estimación de **$15.000** y aboná **$5.000 de anticipo** con E. Estos valores del guion fueron elegidos por el grupo y se configuran en `ORDER`.
+4. Salí por el acceso. La primera salida no termina la historia: abre una pantalla negra y un salto de unas horas mientras el equipo prepara el diseño.
+5. Aparece un mensaje con el soporte, presupuesto final de $15.000, anticipo de $5.000 y saldo de **$10.000**. Elegí **Sí, autorizar impresión**. **Todavía no** deja el pedido en espera, sin imprimir ni avanzar al retiro; podés autorizar después.
+6. El mensaje confirma que podés retirar mañana. Pulsá **Ir a retirar · Al día siguiente** cuando termines de leer o grabar; volvés a aparecer en la entrada del local.
+7. Acercate al mostrador: el soporte ensamblado está sobre él. E abona el saldo y te entrega la bolsa.
+8. Salí nuevamente para cerrar el recorrido. Reiniciar restaura referencias, anticipo, aprobación, pieza y bolsa.
+
+La notificación pertenece a la simulación, sin enviar mensajes reales. El modelado y la fabricación del encargo se representan con saltos temporales y una vista del diseño; no se espera el tiempo real ni se agrega otro recorrido por E1. Mientras se muestra el mensaje quedan pausados el movimiento y los controles de cámara; el botón **Reiniciar recorrido** sigue disponible. Los botones se pueden usar con teclado; 1 autoriza, 2 deja en espera y Enter permite regresar desde la confirmación de retiro.
+
+**Las tres modalidades están implementadas.** En los casos presenciales se cobra tiempo de estación y material. El encargo conserva un presupuesto por trabajo independiente: el tiempo fuera del local no suma minutos ni importes de estación.
 
 ## Controles
 
@@ -84,8 +97,9 @@ La búsqueda del filamento respeta los muebles y al jugador. Si se bloquea al t�
 - Una persona trabaja sentada en E2. Es parte del caso ilustrativo, no una medición de ocupación.
 - El técnico recorre puntos de paso mientras no está solicitado. Al llamarlo va a E1 por el pasillo, respeta colisiones y se queda hasta terminar el trabajo.
 - Seis figuras en la vidriera, logo elevado y tarifario de alto contraste en la pared derecha **entre E2 y E3**, fuera del ancho de sus impresoras.
-- Panel de marca detrás de recepción, sobre listones de madera, con ilustración de impresora y composición en tonos cálidos. Cuadros ilustrados en el pasillo y los puestos, póster del proceso y de recepción, estantes con libros/modelos, plantas de mesa y una planta alta junto a la vidriera. Detalles de madera, apuntes y lápices en las mesas.
-- Piso de madera mate con vetas y juntas escalonadas, alfombra de entrada y alfombra larga en el pasillo. Las alfombras quedan por debajo de los indicadores del recorrido.
+- Restaurado el panel “Hecho acá” detrás de recepción, conservando el cuadro lateral con la marca e impresora. Los cinco cuadros del pasillo/puestos tienen motivos diferentes: hoja, lámpara, cohete, engranajes y soporte para teléfono; las palabras del pasillo son “Inspirá”, “Imaginá” y “Probá”.
+- Póster “De la idea a la pieza” con dibujos de computadora, impresora y soporte terminado. Estantes con libros/modelos, plantas de mesa y una planta alta junto a la vidriera. Detalles de madera, apuntes y lápices en las mesas.
+- Piso mate en damero arena/arcilla, alfombra de entrada y alfombra larga centrada con el armario de filamentos. Las alfombras quedan por debajo de los indicadores del recorrido.
 - Paleta de marfil, madera clara, arcilla suave y salvia. Geometrías simples y carteles/pantallas generados localmente.
 
 Las proporciones son unidades visuales para la demo, no medidas arquitectónicas reales. El plano original es conceptual; esta revisión incorpora los cambios de distribución solicitados por el grupo.
@@ -109,13 +123,15 @@ Fórmula: `tarifa_horaria × minutos / 60 + precio_por_gramo × gramos`. La segu
 
 Los importes son ficticios y las estimaciones están precargadas. La pantalla simula CAD/laminado y las impresoras simulan fabricación; no se conectan a equipos reales. El cierre es una demostración, sin pagos ni facturación real.
 
+Para el encargo, `ORDER` define por separado estimación, total, anticipo y duración visual del salto de diseño: **$15.000 − $5.000 = $10.000** pendientes al retirar. No se aplica `getQuote()` ni la tarifa por hora del presencial a este servicio. Aceptar/repetir una acción no cobra de nuevo el anticipo; la primera salida exige haberlo confirmado y el retiro exige la autorización posterior del presupuesto final.
+
 Por pedido del grupo, esos avisos se conservan en la documentación técnica y no se dicen dentro de los diálogos ni del tarifario: la escena representa una atención real con sus valores, sin comentarios sobre la producción del video.
 
 ## Rendimiento
 
 Se consultaron los ejemplos de la materia, incluido 6.2 de rendimiento. La escena reutiliza materiales y geometrías, agrupa mobiliario estático con `InstancedMesh`, calcula sus colisiones una vez y mantiene animaciones por tiempo transcurrido. El mobiliario agrupado conserva objetos lógicos para límites y pruebas.
 
-`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. La madera del piso usa una textura repetida de 512×512 y las alfombras, texturas de 256×128, generadas una sola vez en canvas. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
+`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. El damero del piso usa una textura repetida de 512×512 y las alfombras, texturas de 256×128, generadas una sola vez en canvas. Durante la pantalla negra del encargo no se redibuja WebGL; el guion sigue actualizando su estado. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
 
 Con **F2** se pueden comparar FPS y costo de dibujo en la computadora de grabación. Todavía hay que comprobar el rendimiento real con el grabador abierto; las pruebas de Node no miden la GPU ni garantizan FPS.
 
@@ -129,11 +145,12 @@ src/character.js          Personas con primitivas; variante sentada
 src/navigation.js         WASD, captura del mouse y sentarse/levantarse
 src/look.js               Filtro de mirada contra giros bruscos
 src/physics.js            Colisiones y apoyo sobre el piso
-src/workflow.js           Guiones asistido/autónomo, tiempos y presupuesto
+src/workflow.js           Tres guiones, tiempos y presupuestos separados
 src/workflow-targets.js   Proximidad y condiciones de interacción
 src/workflow-scene.js     Técnico, impresión, traslado y ensamblado
 src/monitor.js            Pantalla de CAD/slicer simulada
 src/workflow-ui.js        Globos de diálogo, opciones y objetivo discreto
+src/order-ui.js           Mensaje del encargo, autorización y salto al retiro
 src/main.js               Coordinación, render, controles y diagnóstico
 tests/                    Pruebas de física, flujo e integración sin GPU
 vendor/three/             Dependencia oficial local con licencia MIT
@@ -145,9 +162,9 @@ npm run check
 npm test
 ```
 
-Las pruebas cubren ambos recorridos completos, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, técnico y colisiones, sentarse/levantarse, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
+Las pruebas cubren los tres recorridos completos, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, referencias, anticipo, espera sin autorización, regreso/retirada, técnico y colisiones, sentarse/levantarse, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Ver [estado de la iteración actual](docs/estado-hito-6.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
+Ver [estado de la iteración actual](docs/estado-hito-7.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
 ## GitHub y próximos pasos
 
@@ -158,8 +175,8 @@ git add .
 git commit -m "Describe el cambio"
 ```
 
-El grupo autorizó subir el recorrido autónomo y los ajustes de decoración/distribución al completarlos. Para publicar commits locales aprobados, ejecutar `git push`.
+La revisión anterior (autónomo y ambientación) está publicada. Esta iteración de encargo se guarda en un commit local para revisión; el push espera el okey final del usuario. Para publicar commits locales aprobados, ejecutar `git push`.
 
 El material docente en `.reference/` y los ZIP están excluidos de Git. Subir el código al repositorio no publica automáticamente una web; la aplicación se ejecuta con Live Server.
 
-Próximos pasos: validar visualmente esta distribución y la sensibilidad con el grupo, implementar el encargo reutilizando el escenario y agregar cámaras preparadas para grabación. No se requiere CAD real, backend, cuentas, reservas, inventario comercial ni pagos.
+Próximos pasos: validar las tomas de las tres modalidades con el grupo, refinar encuadres y agregar cámaras preparadas para grabación si hacen falta. No se requiere CAD real, backend, cuentas, reservas, inventario comercial ni pagos.

@@ -2,7 +2,7 @@
 export const MODES = Object.freeze([
   { id: 'assisted', title: 'Diseño con asistencia', description: 'Diseñamos juntos y fabricamos tu pieza.', available: true },
   { id: 'autonomous', title: 'Diseño autónomo', description: 'Diseñás y preparás en la PC; revisamos antes de imprimir.', available: true },
-  { id: 'order', title: 'Pieza por encargo', description: 'Dejás referencias y volvés a retirar el trabajo.', available: false },
+  { id: 'order', title: 'Pieza por encargo', description: 'Dejás referencias, aprobás el presupuesto y retirás la pieza.', available: true },
 ].map(Object.freeze));
 
 export const DEMO = Object.freeze({
@@ -17,6 +17,9 @@ export function getQuote() {
   return Object.freeze({ station, material, total: station + material });
 }
 export const money = amount => '$ ' + Number(amount).toLocaleString('es-AR');
+// Presupuesto por trabajo, independiente de los minutos de uso presencial.
+export const ORDER = Object.freeze({ estimate: 15000, total: 15000, deposit: 5000, designSeconds: 2.5 });
+export const getOrderQuote = () => Object.freeze({ estimate: ORDER.estimate, total: ORDER.total, deposit: ORDER.deposit, balance: ORDER.total - ORDER.deposit });
 
 export const STEPS = Object.freeze([
   { id: 'station', title: 'Buscá la estación E1', speaker: 'receptionist', target: 'station', action: 'Abrir el proyecto y llamar al técnico', dialogue: 'Te asigno E1. Allí podés contarle tu idea al técnico y empezar el diseño. Al terminar, volvés conmigo para el cobro.' },
@@ -54,7 +57,18 @@ export const AUTONOMOUS_STEPS = Object.freeze([
   ...STEPS.filter(step => ['checkout', 'exit', 'complete'].includes(step.id)),
 ].map(Object.freeze));
 
-export const getSteps = mode => mode === 'autonomous' ? AUTONOMOUS_STEPS : STEPS;
+export const ORDER_STEPS = Object.freeze([
+  { id: 'order-brief', title: 'Hablá con el técnico', speaker: 'receptionist', target: 'technician', action: 'Hablar y entregar referencias', dialogue: 'Para el encargo hablá directamente con nuestro técnico. Mostrale los planos, las medidas o las referencias de tu idea; él te prepara una estimación.' },
+  { id: 'order-estimate', title: 'Referencias y estimación', speaker: 'technician', target: 'technician', action: 'Aceptar estimación y abonar anticipo', dialogue: 'Con estas referencias puedo diseñar el soporte. Estimo ' + money(ORDER.estimate) + ' por el trabajo completo, con un anticipo de ' + money(ORDER.deposit) + '. Te enviamos el diseño y el presupuesto final para que autorices la impresión.' },
+  { id: 'order-leave', title: 'Salí del local', speaker: 'technician', target: 'exit', action: '', dialogue: 'Recibí las referencias y el anticipo. Ya podés retirarte; te escribimos cuando esté terminado el diseño. La impresión espera tu autorización.' },
+  { id: 'order-design', title: 'El equipo prepara tu diseño', speaker: 'technician', target: 'remote', action: '', automatic: true, seconds: ORDER.designSeconds, dialogue: '' },
+  { id: 'order-approval', title: 'Revisá el diseño y autorizá la impresión', speaker: 'technician', target: 'remote', action: '', dialogue: '' },
+  { id: 'order-next-day', title: 'Retiro al día siguiente', speaker: 'technician', target: 'remote', action: '', dialogue: '' },
+  { id: 'order-pickup', title: 'Retirá tu encargo en recepción', speaker: 'receptionist', target: 'reception', action: 'Abonar saldo y retirar la pieza', dialogue: '¡Hola! Tu soporte está listo. El total es ' + money(ORDER.total) + '; ya abonaste ' + money(ORDER.deposit) + ' de anticipo. Queda un saldo de ' + money(getOrderQuote().balance) + '. Te entrego la pieza con su bolsa.' },
+  ...STEPS.filter(step => ['exit', 'complete'].includes(step.id)),
+].map(Object.freeze));
+
+export const getSteps = mode => mode === 'order' ? ORDER_STEPS : mode === 'autonomous' ? AUTONOMOUS_STEPS : STEPS;
 export const getStep = state => getSteps(state.mode)[state.stepIndex];
 const indexOf = (mode, id) => getSteps(mode).findIndex(step => step.id === id);
 function stateAt(mode, stepIndex, progress = 0) {
@@ -62,6 +76,17 @@ function stateAt(mode, stepIndex, progress = 0) {
   const active = stepIndex >= 0;
   const stepId = active ? getSteps(mode)[stepIndex].id : 'idle';
   const autonomous = mode === 'autonomous';
+  if (mode === 'order' && active) return Object.freeze({
+    mode, stepIndex, stepId, station: 'E1', progress,
+    referencesReceived: at('order-estimate'), depositPaid: at('order-leave'),
+    orderApproved: at('order-next-day'), orderDeferred: false,
+    orderAway: ['order-design', 'order-approval', 'order-next-day'].includes(stepId),
+    designLevel: at('order-approval') ? 2 : 0, prepared: at('order-approval'), confirmed: at('order-next-day'),
+    assistantCalled: stepId === 'order-estimate', materialLoaded: at('order-pickup'),
+    basePrinted: at('order-pickup'), backPrinted: at('order-pickup'),
+    baseOnTable: at('order-pickup'), backOnTable: at('order-pickup'), assembled: at('order-pickup'),
+    hasBag: at('exit'), complete: at('complete'),
+  });
   return Object.freeze({
     mode: active ? mode : null, stepIndex, stepId, station: 'E1', progress,
     designLevel: autonomous ? at('prepare') ? 2 : at('design-detail') ? 1 : 0 : at('review-detail') ? 2 : at('confirm') ? 1 : 0,
@@ -85,13 +110,17 @@ export function createWorkflow() {
     },
     tick(dt) {
       if (!state.mode || !getStep(state).automatic || getStep(state).sceneDriven || !Number.isFinite(dt) || dt <= 0) return false;
-      const seconds = state.stepId === 'assembly' ? DEMO.assemblySeconds : DEMO.printSeconds;
+      const seconds = getStep(state).seconds ?? (state.stepId === 'assembly' ? DEMO.assemblySeconds : DEMO.printSeconds);
       const progress = Math.min(1, state.progress + Math.min(dt, 0.1) / seconds);
       if (progress >= 1 - 1e-9) notify(stateAt(state.mode, state.stepIndex + 1));
       else state = stateAt(state.mode, state.stepIndex, progress);
       return true;
     },
     completeMaterial() { if (state.stepId !== 'material' || !state.confirmed) return false; notify(stateAt(state.mode, indexOf(state.mode, 'printing-base'))); return true; },
+    leaveForOrder() { if (state.mode !== 'order' || state.stepId !== 'order-leave' || !state.depositPaid) return false; notify(stateAt('order', indexOf('order', 'order-design'))); return true; },
+    approveOrder() { if (state.mode !== 'order' || state.stepId !== 'order-approval') return false; notify(stateAt('order', indexOf('order', 'order-next-day'))); return true; },
+    deferOrder() { if (state.mode !== 'order' || state.stepId !== 'order-approval' || state.orderDeferred) return false; notify(Object.freeze({ ...state, orderDeferred: true })); return true; },
+    returnForOrder() { if (state.mode !== 'order' || state.stepId !== 'order-next-day' || !state.orderApproved) return false; notify(stateAt('order', indexOf('order', 'order-pickup'))); return true; },
     finish() { if (state.stepId !== 'exit') return false; notify(stateAt(state.mode, indexOf(state.mode, 'complete'))); return true; },
     reset() { if (!state.mode) return false; notify(stateAt(null, -1)); return true; },
     subscribe(listener) { if (typeof listener !== 'function') throw new TypeError('Se espera una función'); listeners.add(listener); return () => listeners.delete(listener); },

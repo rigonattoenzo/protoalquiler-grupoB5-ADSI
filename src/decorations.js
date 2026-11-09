@@ -11,19 +11,41 @@ export function applyFloorTexture(floor) {
   let seed = 31;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   const texture = canvasTexture(512, 512, ctx => {
-    for (let row = 0; row < 12; row += 1) {
-      const y = row * 512 / 12, h = 512 / 12;
-      ctx.fillStyle = ['#d9ba94', '#e0c39f', '#d5b48c', '#ddbe99'][row % 4]; ctx.fillRect(0, y, 512, h);
-      ctx.fillStyle = '#b3937045'; ctx.fillRect(0, y, 512, 1);
-      ctx.fillRect(row % 2 ? 170 : 345, y, 1, h);
-      for (let line = 0; line < 85; line += 1) {
-        ctx.fillStyle = line % 2 ? '#8d68401a' : '#fff0d51f';
-        ctx.fillRect(random() * 512, y + random() * h, 15 + random() * 120, 0.4 + random() * 0.6);
-      }
+    for (let row = 0; row < 2; row += 1) for (let col = 0; col < 2; col += 1) {
+      ctx.fillStyle = (row + col) % 2 ? '#caa88b' : '#ead6b8'; ctx.fillRect(col * 256, row * 256, 256, 256);
     }
+    for (let i = 0; i < 1600; i += 1) { ctx.fillStyle = i % 2 ? '#fff8e719' : '#82694c0a'; ctx.fillRect(random() * 512, random() * 512, 1 + random() * 2, 1); }
   });
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(3, 3);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(CONFIG.room.width / 1.6, CONFIG.room.depth / 1.6);
   floor.material = floor.material.clone(); floor.material.color.set(0xffffff); floor.material.map = texture; floor.material.roughness = 1;
+}
+
+export function drawProcessPoster(ctx, canvas) {
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#fff0d2'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#453f3c'; ctx.font = '800 ' + w * 0.061 + 'px system-ui'; ctx.fillText('DE LA IDEA A LA PIEZA', w / 2, h * 0.16, w * 0.9);
+  ctx.fillStyle = '#7a8065'; ctx.font = '500 ' + w * 0.026 + 'px system-ui'; ctx.fillText('Un espacio para transformar lo que imaginás', w / 2, h * 0.3, w * 0.9);
+  [0.2, 0.5, 0.8].forEach((position, i) => {
+    const x = w * position, top = h * 0.41, pw = w * 0.22, ph = h * 0.35;
+    ctx.fillStyle = ['#d9e4c9', '#edceb4', '#e7dbaa'][i]; ctx.fillRect(x - pw / 2, top, pw, ph);
+    ctx.fillStyle = '#5c8066';
+    if (i === 0) {
+      ctx.fillRect(x - pw * 0.33, top + ph * 0.16, pw * 0.66, ph * 0.58);
+      ctx.fillStyle = '#fff8e4'; ctx.fillRect(x - pw * 0.29, top + ph * 0.21, pw * 0.58, ph * 0.47);
+      ctx.fillStyle = '#b18b67'; ctx.fillRect(x - pw * 0.43, top + ph * 0.8, pw * 0.86, ph * 0.06);
+      ctx.fillStyle = '#95b59c'; ctx.fillRect(x - pw * 0.16, top + ph * 0.38, pw * 0.32, ph * 0.16);
+    } else if (i === 1) {
+      ctx.fillRect(x - pw * 0.33, top + ph * 0.1, pw * 0.05, ph * 0.73); ctx.fillRect(x + pw * 0.28, top + ph * 0.1, pw * 0.05, ph * 0.73);
+      ctx.fillRect(x - pw * 0.33, top + ph * 0.1, pw * 0.66, ph * 0.05); ctx.fillRect(x - pw * 0.38, top + ph * 0.83, pw * 0.76, ph * 0.05);
+      ctx.fillStyle = '#bd8b73'; ctx.fillRect(x - pw * 0.04, top + ph * 0.15, pw * 0.08, ph * 0.25);
+      for (let layer = 0; layer < 5; layer += 1) { ctx.fillStyle = layer % 2 ? '#95b59c' : '#6c9171'; ctx.fillRect(x - pw * 0.18, top + ph * (0.76 - layer * 0.06), pw * 0.36, ph * 0.05); }
+    } else {
+      ctx.fillRect(x - pw * 0.32, top + ph * 0.78, pw * 0.64, ph * 0.08); ctx.fillRect(x - pw * 0.04, top + ph * 0.2, pw * 0.07, ph * 0.6);
+      ctx.fillStyle = '#453f3c'; ctx.fillRect(x - pw * 0.15, top + ph * 0.16, pw * 0.3, ph * 0.56);
+      ctx.fillStyle = '#f6eedc'; ctx.fillRect(x - pw * 0.12, top + ph * 0.2, pw * 0.24, ph * 0.45);
+    }
+    ctx.fillStyle = '#453f3c'; ctx.font = '750 ' + w * 0.032 + 'px system-ui'; ctx.fillText(['01 · DISEÑÁ', '02 · IMPRIMÍ', '03 · DISFRUTÁ'][i], x, h * 0.88, pw + 20);
+  });
 }
 
 // Pictogramas vectoriales, sin depender de una tipografía de símbolos instalada.
@@ -93,6 +115,23 @@ export function addDecorations({ scene, box, cylinder, sign, material, renderCan
         if (theme === 'leaf') {
           ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.62); ctx.bezierCurveTo(w * 0.1, h * 0.3, w * 0.82, h * 0.15, w * 0.62, h * 0.5); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(w * 0.46, h * 0.66); ctx.lineTo(w * 0.63, h * 0.27); ctx.stroke();
+        } else if (theme === 'bulb') {
+          ctx.fillStyle = '#eddb9f'; ctx.beginPath(); ctx.arc(w * 0.5, h * 0.38, w * 0.19, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(w * 0.4, h * 0.47); ctx.lineTo(w * 0.4, h * 0.59); ctx.lineTo(w * 0.6, h * 0.59); ctx.lineTo(w * 0.6, h * 0.47); ctx.stroke();
+          [0.62, 0.65].forEach(y => { ctx.beginPath(); ctx.moveTo(w * 0.42, h * y); ctx.lineTo(w * 0.58, h * y); ctx.stroke(); });
+          for (let i = 0; i < 7; i += 1) { const a = Math.PI + i * Math.PI / 6; ctx.beginPath(); ctx.moveTo(w * (0.5 + Math.cos(a) * 0.25), h * 0.38 + Math.sin(a) * w * 0.25); ctx.lineTo(w * (0.5 + Math.cos(a) * 0.31), h * 0.38 + Math.sin(a) * w * 0.31); ctx.stroke(); }
+        } else if (theme === 'rocket') {
+          ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.2); ctx.bezierCurveTo(w * 0.77, h * 0.35, w * 0.65, h * 0.48, w * 0.6, h * 0.57); ctx.lineTo(w * 0.4, h * 0.57); ctx.bezierCurveTo(w * 0.35, h * 0.48, w * 0.23, h * 0.35, w * 0.5, h * 0.2); ctx.closePath(); ctx.stroke();
+          ctx.beginPath(); ctx.arc(w * 0.5, h * 0.37, w * 0.07, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(w * 0.4, h * 0.48); ctx.lineTo(w * 0.28, h * 0.6); ctx.lineTo(w * 0.4, h * 0.57); ctx.moveTo(w * 0.6, h * 0.48); ctx.lineTo(w * 0.72, h * 0.6); ctx.lineTo(w * 0.6, h * 0.57); ctx.moveTo(w * 0.44, h * 0.6); ctx.lineTo(w * 0.5, h * 0.69); ctx.lineTo(w * 0.56, h * 0.6); ctx.stroke();
+        } else if (theme === 'gears') {
+          [[0.4, 0.37, 0.15], [0.65, 0.54, 0.1]].forEach(([x, y, r]) => {
+            ctx.beginPath(); ctx.arc(w * x, h * y, w * r, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(w * x, h * y, w * r * 0.4, 0, Math.PI * 2); ctx.stroke();
+            for (let i = 0; i < 10; i += 1) { const a = i * Math.PI / 5; ctx.beginPath(); ctx.moveTo(w * (x + Math.cos(a) * r), h * y + Math.sin(a) * w * r); ctx.lineTo(w * (x + Math.cos(a) * r * 1.25), h * y + Math.sin(a) * w * r * 1.25); ctx.stroke(); }
+          });
+        } else if (theme === 'phone') {
+          ctx.strokeRect(w * 0.36, h * 0.24, w * 0.28, h * 0.36); ctx.strokeRect(w * 0.39, h * 0.27, w * 0.22, h * 0.27);
+          ctx.beginPath(); ctx.moveTo(w * 0.5, h * 0.6); ctx.lineTo(w * 0.43, h * 0.68); ctx.lineTo(w * 0.75, h * 0.68); ctx.moveTo(w * 0.32, h * 0.59); ctx.lineTo(w * 0.68, h * 0.59); ctx.stroke();
         } else {
           const cx = w * 0.5, cy = h * 0.38, a = w * 0.22, b = Math.min(h * 0.1, w * 0.12), d = Math.min(h * 0.19, w * 0.3);
           ctx.beginPath(); ctx.moveTo(cx, cy - b); ctx.lineTo(cx + a, cy); ctx.lineTo(cx, cy + b); ctx.lineTo(cx - a, cy); ctx.closePath();
@@ -109,10 +148,10 @@ export function addDecorations({ scene, box, cylinder, sign, material, renderCan
 
   // El panel recibe al visitante sobre el frente del depósito, detrás de caja.
   for (let i = 0; i < 20; i += 1) box('Listón mural recepción', [0.1, 1.4, 0.035], [-7.75 + i * 0.18, 2.23, 2.925], colors.wood);
-  artwork('Panel marca recepción', { x: -6.04, y: 2.23, z: 2.99, width: 2.75, height: 1.08, theme: 'welcome' });
+  artwork('Panel Hecho acá', { x: -6.04, y: 2.23, z: 2.99, width: 2.75, height: 1.08, title: 'HECHO ACÁ', subtitle: 'Tus ideas toman forma · ProtoAlquiler 3D' });
   artwork('Póster recepción', { x: room.left + 0.065, y: 2.08, z: 5.05, width: 1.45, height: 1.15, rotation: Math.PI / 2, theme: 'welcome' });
-  [-4.5, -1.525, 1.425].forEach((z, i) => artwork('Cuadro del pasillo ' + (i + 1), { x: -4.035, y: 1.63, z: z + 0.94, width: 0.62, height: 0.95, rotation: Math.PI / 2, theme: 'leaf', title: 'CRECER', subtitle: 'Una idea a la vez' }));
-  [-0.55, 0.5].forEach((z, i) => artwork('Cuadro sobre puestos ' + (i + 1), { x: room.right - 0.07, y: 2.28, z, width: 0.75, height: 1.16, rotation: -Math.PI / 2, title: i ? 'CREÁ' : 'EXPLORÁ', subtitle: 'Diseño + fabricación', hideInOverview: true }));
+  [-4.5, -1.525, 1.425].forEach((z, i) => artwork('Cuadro del pasillo ' + (i + 1), { x: -4.035, y: 1.63, z: z + 0.94, width: 0.62, height: 0.95, rotation: Math.PI / 2, theme: ['leaf', 'bulb', 'rocket'][i], title: ['INSPIRÁ', 'IMAGINÁ', 'PROBÁ'][i], subtitle: ['Observá lo cotidiano', 'Todo empieza con una idea', 'Un prototipo, otro intento'][i] }));
+  [-0.55, 0.5].forEach((z, i) => artwork('Cuadro sobre puestos ' + (i + 1), { x: room.right - 0.07, y: 2.28, z, width: 0.75, height: 1.16, rotation: -Math.PI / 2, theme: i ? 'phone' : 'gears', title: i ? 'CREÁ' : 'EXPLORÁ', subtitle: i ? 'De la pantalla a tus manos' : 'Ideas que se conectan', hideInOverview: true }));
 
   // Estantes adosados: no ocupan la circulación del corredor.
   box('Estante recepción', [1.12, 0.065, 0.24], [-7.1, 1.22, 3.035], colors.wood);
@@ -139,7 +178,7 @@ export function addDecorations({ scene, box, cylinder, sign, material, renderCan
     });
   }
   rug('Alfombra de entrada', [2.05, 0.012, 1.05], [-4.7, 0.034, 6.55], '#7d8b74', '#b6bea2');
-  rug('Alfombra del pasillo', [1.65, 0.012, 7.8], [-1.7, 0.034, -0.7], '#c6ab8a', '#9b8064');
+  rug('Alfombra del pasillo', [1.65, 0.012, 7.8], [CONFIG.cabinet.x, 0.034, -0.7], '#c6ab8a', '#9b8064');
 
   // Pequeña galería material: modelos geométricos sobre estantes de la pared.
   [-2.5, 0.45].forEach((z, i) => {

@@ -35,6 +35,18 @@ export function createWorkflowScene({ scene, world, camera }) {
   const originalPosition = technician.position.clone(), originalQuaternion = technician.quaternion.clone();
   const originalCollider = { ...technicianCollider };
   const technicianHead = technician.getObjectByName('Cabeza'), receptionistHead = world.receptionist.getObjectByName('Cabeza');
+  const references = new THREE.Group(); references.name = 'Referencias entregadas al técnico'; root.add(references);
+  const clipboard = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.025), new THREE.MeshStandardMaterial({ color: 0xb18b67 })); references.add(clipboard);
+  const referenceCanvas = document.createElement('canvas'); referenceCanvas.width = 256; referenceCanvas.height = 320;
+  const referenceContext = referenceCanvas.getContext('2d'); referenceContext.fillStyle = '#fff6df'; referenceContext.fillRect(0, 0, 256, 320);
+  referenceContext.fillStyle = '#453f3c'; referenceContext.font = '600 19px system-ui'; referenceContext.fillText('SOPORTE CELULAR', 18, 35);
+  referenceContext.fillStyle = '#95b59c'; referenceContext.fillRect(40, 223, 170, 18);
+  referenceContext.fillRect(117, 115, 14, 110); referenceContext.fillRect(132, 211, 55, 12);
+  referenceContext.fillStyle = '#5c8066'; referenceContext.font = '15px system-ui'; referenceContext.fillText('Base 64 mm · dos piezas', 18, 285);
+  const referenceTexture = new THREE.CanvasTexture(referenceCanvas); referenceTexture.colorSpace = THREE.SRGBColorSpace;
+  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.57), new THREE.MeshBasicMaterial({ map: referenceTexture })); sheet.position.z = 0.014; references.add(sheet);
+  references.visible = false;
+  const referenceStart = new THREE.Vector3(), referenceTarget = new THREE.Vector3(); let referenceAge = 0;
   const heldSpool = printer.spool.clone(true); heldSpool.name = 'Bobina en manos del técnico';
   heldSpool.traverse(item => { if (item.isMesh) item.geometry = item.geometry.clone(); });
   technician.add(heldSpool);
@@ -66,13 +78,20 @@ export function createWorkflowScene({ scene, world, camera }) {
   }
   function applyState(next) {
     state = next;
-    if (next.assistantCalled && !called) planHelp();
+    if (next.assistantCalled && !called) {
+      if (next.mode === 'order') { route = []; wait = 0; } else planHelp();
+    }
     if (!next.assistantCalled && called) {
       // Sale por el frente de la silla antes de retomar el corredor.
       route = [{ x: technician.position.x, z: CONFIG.workstation.approachZ }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: 0.35, z: 3.8 }];
       patrolIndex = 1;
     }
     called = Boolean(next.assistantCalled);
+    if (next.stepId === 'order-estimate' && lastStep !== next.stepId) {
+      referenceAge = 0;
+      if (camera) { camera.updateMatrixWorld(true); referenceStart.set(0.15, -0.25, -0.65).applyMatrix4(camera.matrixWorld); }
+      else referenceStart.copy(technician.position).add(new THREE.Vector3(0, 1.1, 0.6));
+    }
     if (next.stepId === 'material' && lastStep !== 'material') {
       materialPhase = 'to-cabinet'; phaseClock = 0; materialReady = false; wait = 0; resetHeldSpool();
       route = [{ x: technician.position.x, z: CONFIG.workstation.approachZ }, { x: 0.35, z: CONFIG.workstation.approachZ }, { x: 0.35, z: -4.35 }, { x: 0.05, z: -4.35 }];
@@ -136,11 +155,12 @@ export function createWorkflowScene({ scene, world, camera }) {
     updateMaterial(step);
     world.cabinetDoor.rotation.y = THREE.MathUtils.damp(world.cabinetDoor.rotation.y, materialPhase === 'pickup' ? -Math.PI * 0.46 : 0, 7, step);
     const definition = getStep(state);
-    marker.visible = !state.complete && !definition?.automatic;
+    marker.visible = !state.complete && !state.orderAway && !definition?.automatic;
     const atReception = !definition || definition.target === 'reception';
     const atExit = definition?.target === 'exit';
-    marker.position.set(atExit ? -4.7 : atReception ? CONFIG.reception.x : CONFIG.workstation.center.x, 0.045, atExit ? CONFIG.room.front + 0.5 : atReception ? CONFIG.reception.z + 1.15 : CONFIG.workstation.center.z);
-    marker.scale.set(atReception || atExit ? 1 : 7.5, atReception || atExit ? 1 : 2.2, 1);
+    const atTechnician = definition?.target === 'technician';
+    marker.position.set(atTechnician ? technician.position.x : atExit ? -4.7 : atReception ? CONFIG.reception.x : CONFIG.workstation.center.x, 0.045, atTechnician ? technician.position.z : atExit ? CONFIG.room.front + 0.5 : atReception ? CONFIG.reception.z + 1.15 : CONFIG.workstation.center.z);
+    marker.scale.set(atTechnician ? 2 : atReception || atExit ? 1 : 7.5, atTechnician ? 2 : atReception || atExit ? 1 : 2.2, 1);
     marker.material.opacity = 0.55 + Math.sin(elapsed * 2) * 0.1;
     const basePrinting = state.stepId === 'printing-base', backPrinting = state.stepId === 'printing-detail';
     printedBase.visible = basePrinting || state.stepId === 'base-ready';
@@ -151,10 +171,19 @@ export function createWorkflowScene({ scene, world, camera }) {
     bag.visible = Boolean(state.hasBag && camera && firstPerson); avatarBag.visible = Boolean(state.hasBag);
     if (bag.visible) bag.position.y = -0.38 + Math.sin(elapsed * 2) * 0.007;
     base.position.copy(tablePoint); back.position.copy(tablePoint).add(new THREE.Vector3(0.75, 0, 0));
+    if (state.mode === 'order') base.position.set(CONFIG.reception.x - 1.27, 1.12, CONFIG.reception.z + 0.25);
     if (state.stepId === 'assembly' || state.assembled) {
       const p = state.assembled ? 1 : state.progress;
-      back.position.copy(tablePoint).add(new THREE.Vector3(0.75 * (1 - p), Math.sin(p * Math.PI) * 0.35 + 0.055 * p, -0.04 * p));
+      back.position.copy(base.position).add(new THREE.Vector3(0.75 * (1 - p), Math.sin(p * Math.PI) * 0.35 + 0.055 * p, -0.04 * p));
     }
+    references.visible = state.stepId === 'order-estimate';
+    if (references.visible) {
+      referenceAge += step; technician.updateMatrixWorld(true);
+      referenceTarget.set(0.3, 1.05, -0.32).applyMatrix4(technician.matrixWorld);
+      references.position.lerpVectors(referenceStart, referenceTarget, Math.min(1, referenceAge / 0.75));
+      references.rotation.y = technician.rotation.y + Math.PI;
+    }
+    if (state.mode === 'order') world.filamentSource.visible = !state.materialLoaded;
     printer.spool.visible = Boolean(state.materialLoaded);
     if (basePrinting || backPrinting) {
       printer.gantry.position.y = 1.36 + state.progress * (backPrinting ? 0.4 : 0.06);
@@ -183,6 +212,7 @@ export function createWorkflowScene({ scene, world, camera }) {
     get printer() { return printer; },
     reset() { applyState({ mode: null, stepId: 'idle', stepIndex: -1 }); update(0); },
     dispose() {
+      referenceTexture.dispose();
       technician.position.copy(originalPosition); technician.quaternion.copy(originalQuaternion); Object.assign(technicianCollider, originalCollider); monitors.forEach(display => display.dispose());
       world.filamentSource.visible = true; world.cabinetDoor.rotation.y = 0;
       technicianHead.rotation.set(0, 0, 0); receptionistHead.rotation.set(0, 0, 0);
