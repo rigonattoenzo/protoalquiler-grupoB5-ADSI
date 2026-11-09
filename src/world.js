@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { createCharacter } from './character.js';
 import { DEMO, money } from './workflow.js';
+import { addDecorations, applyFloorTexture, drawRoomPictogram } from './decorations.js';
 
 export function createWorld(scene) {
   const { colors, room, reception, cabinet } = CONFIG;
@@ -30,28 +31,25 @@ export function createWorld(scene) {
     const mesh = new THREE.Mesh(cylinderCache.get(key), material(color));
     mesh.position.set(...position); mesh.castShadow = true; parent.add(mesh); renderCandidates.push(mesh); return mesh;
   }
-  function sign(text, { x, y, z, width = 2, height = 0.45, rotation = 0, background = '#453f3c', color = '#fff9ed', fontSize = 48, draw } = {}) {
-    const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = Math.round(1024 * height / width);
+  function sign(text, { x, y, z, width = 2, height = 0.45, rotation = 0, background = '#453f3c', color = '#fff9ed', fontSize = 48, resolution = 1024, draw } = {}) {
+    const canvas = document.createElement('canvas'); canvas.width = resolution; canvas.height = Math.round(resolution * height / width);
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = color; ctx.font = '600 ' + fontSize + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (background !== null) { ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    const textSize = fontSize * resolution / 1024;
+    ctx.fillStyle = color; ctx.font = '600 ' + textSize + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     if (draw) draw(ctx, canvas);
     else {
       const lines = text.split('\n');
-      lines.forEach((line, i) => ctx.fillText(line, 512, canvas.height / 2 + (i - (lines.length - 1) / 2) * fontSize * 1.45, 960));
+      lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, canvas.height / 2 + (i - (lines.length - 1) / 2) * textSize * 1.45, canvas.width * 0.9375));
     }
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }));
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: background === null, depthWrite: background !== null }));
     mesh.position.set(x, y, z); mesh.rotation.y = rotation; scene.add(mesh); return mesh;
   }
   const centerX = (room.left + room.right) / 2, centerZ = (room.back + room.front) / 2;
   scene.background = new THREE.Color(colors.background);
   box('Base del local', [room.width + 0.35, 0.22, room.depth + 0.35], [centerX, -0.16, centerZ], colors.ink);
-  box('Piso', [room.width, 0.1, room.depth], [centerX, -0.025, centerZ], colors.floor);
-  const joints = [];
-  for (let x = room.left + 0.9; x < room.right; x += 0.9) joints.push(new THREE.Vector3(x, 0.03, room.back), new THREE.Vector3(x, 0.03, room.front));
-  for (let z = room.back + 2; z < room.front; z += 2) joints.push(new THREE.Vector3(room.left, 0.03, z), new THREE.Vector3(room.right, 0.03, z));
-  scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(joints), new THREE.LineBasicMaterial({ color: 0xd5bc99 })));
+  applyFloorTexture(box('Piso', [room.width, 0.1, room.depth], [centerX, -0.025, centerZ], colors.floor));
   box('Pared del fondo', [room.width + 0.18, room.height, 0.18], [centerX, room.height / 2, room.back - 0.05], colors.wall, { solid: true });
   box('Pared izquierda', [0.18, room.height, room.depth + 0.18], [room.left - 0.05, room.height / 2, centerZ], colors.wall, { solid: true });
   cutaway.push(box('Pared derecha', [0.18, room.height, room.depth + 0.18], [room.right + 0.05, room.height / 2, centerZ], colors.wall, { solid: true }));
@@ -72,25 +70,29 @@ export function createWorld(scene) {
   barrier('Lateral derecho del umbral', -3.5, room.right + 0.2, room.front + 0.1, room.front + 1.3);
 
   [
-    { name: 'DEPÓSITO', min: -6, max: -3, sub: 'Acceso reservado al personal', color: 0xcebea4 },
-    { name: 'BAÑO HOMBRES', min: -3, max: -0.05, sub: 'Individual', color: 0xe1cfbb },
-    { name: 'BAÑO MUJERES', min: -0.05, max: 2.9, sub: 'Individual', color: 0xe1cfbb },
-  ].forEach(({ name, min, max, sub, color }) => {
+    { name: 'BAÑO MUJERES', min: -6, max: -3, icon: 'woman', color: 0xe1cfbb },
+    { name: 'BAÑO HOMBRES', min: -3, max: -0.05, icon: 'man', color: 0xe1cfbb },
+    { name: 'DEPÓSITO', min: -0.05, max: 2.9, icon: 'box', color: 0xcebea4 },
+  ].forEach(({ name, min, max, icon, color }) => {
     const z = (min + max) / 2;
     box(name, [3.925, room.height, max - min], [-6.0375, room.height / 2, z], color, { solid: true });
     box('Puerta ' + name, [0.055, 2.15, 1], [-4.04, 1.08, z], colors.wall);
     box('Marco ' + name, [0.07, 0.08, 1.14], [-4, 2.18, z], colors.wood);
     box('Manija ' + name, [0.1, 0.045, 0.12], [-3.99, 1.01, z + 0.32], colors.ink);
-    sign(name + '\n' + sub, { x: -3.998, y: 1.75, z, width: 0.9, height: 0.42, rotation: Math.PI / 2, fontSize: 56 });
+    const pictogram = sign('', { x: -3.998, y: 1.68, z, width: 0.3, height: 0.39, rotation: Math.PI / 2, background: null, resolution: 256, draw: (ctx, canvas) => drawRoomPictogram(ctx, canvas, icon) });
+    pictogram.name = 'Pictograma ' + name;
+    box('Cornisa ' + name, [0.065, 0.095, max - min], [-4.0425, room.height - 0.0475, z], colors.trim);
+    box('Zócalo ' + name, [0.035, 0.11, max - min], [-4.0575, 0.055, z], colors.trim);
     const label = sign(name, { x: -6.04, y: room.height + 0.012, z, width: 3, height: 0.55, background: '#e1cfbb', color: '#453f3c', fontSize: 65 });
     label.rotation.x = -Math.PI / 2;
   });
-  // Juntas oscuras sobre la fachada y el techo: distinguen los tres ambientes
+  // Juntas en tono madera sobre la fachada y el techo: distinguen los ambientes
   // sin volver a abrir huecos entre los volúmenes cerrados.
   [-3, -0.05].forEach(z => {
-    box('Junta vertical de habitaciones', [0.018, room.height, 0.045], [-4.066, room.height / 2, z], colors.ink);
-    box('Junta superior de habitaciones', [3.925, 0.018, 0.045], [-6.0375, room.height + 0.01, z], colors.ink);
+    box('Junta vertical de habitaciones', [0.025, room.height, 0.055], [-4.0625, room.height / 2, z], colors.trim);
+    box('Junta superior de habitaciones', [3.925, 0.018, 0.055], [-6.0375, room.height + 0.01, z], colors.trim);
   });
+  box('Cornisa frente depósito', [3.925, 0.095, 0.065], [-6.0375, room.height - 0.0475, 2.9125], colors.trim);
 
   box('Mostrador recepción', [reception.width, 1.02, reception.depth], [reception.x, 0.51, reception.z], colors.blue, { solid: true });
   box('Tapa recepción', [reception.width + 0.12, 0.11, reception.depth + 0.12], [reception.x, 1.06, reception.z], colors.wood);
@@ -153,7 +155,6 @@ export function createWorld(scene) {
     if (!occupied) seats.set(id, { id, position: { x, z }, eyeHeight: 1.35, collider, lookAt: { x: CONFIG.stations.find(item => item.id === id).x - 1.75, y: 1.43, z: z - 1.23 } });
   }
   chair('Recepción', reception.x, reception.staffZ, { yaw: Math.PI, occupied: true });
-  const foliageGeometry = new THREE.IcosahedronGeometry(0.13, 0);
   CONFIG.stations.forEach(({ id, x, z }) => {
     const left = x - 1.75, printerX = x + 1.55;
     box('Mesa ' + id, [CONFIG.workstation.width, 0.12, CONFIG.workstation.depth], [x, 0.85, z], colors.wood, { solid: true });
@@ -180,8 +181,6 @@ export function createWorld(scene) {
     const loadedSpool = spool([printerX, 2.39, z], DEMO.color, 0.8); loadedSpool.userData.dynamic = true; loadedSpool.visible = id !== 'E1';
     printers.set(id, { x: printerX, z, bed, gantry, head, spool: loadedSpool });
     chair(id, id === 'E2' ? left : x - 0.1, z + 1.23, { occupied: id === 'E2' });
-    cylinder(scene, 0.09, 0.12, [x + 0.55, 0.98, z - 0.38], 0xc69576);
-    const sprout = new THREE.Mesh(foliageGeometry, material(colors.green)); sprout.position.set(x + 0.55, 1.12, z - 0.38); sprout.name = 'Planta ' + id; scene.add(sprout); renderCandidates.push(sprout);
     sign(id + ' / ESTACIÓN', { x: x - 0.2, y: 1.07, z: z - 0.703, width: 1.35, height: 0.2, background: '#95b59c', color: '#453f3c', fontSize: 60 });
   });
 
@@ -204,12 +203,11 @@ export function createWorld(scene) {
     ctx.font = '500 30px system-ui'; ctx.fillText('Encargos: presupuesto por trabajo', 512, 612);
   } });
   rateSign.name = 'Tarifario'; cutaway.push(rateSign);
-  const poster = sign('DE LA IDEA A LA PIEZA\n01 DISEÑÁ · 02 PREPARÁ · 03 IMPRIMÍ\nProbá. Ajustá. Volvé a crear.', { x: room.right - 0.055, y: 2.5, z: CONFIG.stations[0].z + 0.05, width: 2.4, height: 0.95, rotation: -Math.PI / 2, background: '#e6c6a5', color: '#453f3c', fontSize: 48 });
+  const poster = sign('DE LA IDEA A LA PIEZA\n01 DISEÑÁ · 02 PREPARÁ · 03 IMPRIMÍ\nProbá. Ajustá. Volvé a crear.', { x: room.right - 0.055, y: 2.5, z: 2.5, width: 1.8, height: 0.75, rotation: -Math.PI / 2, background: '#e6c6a5', color: '#453f3c', fontSize: 48 });
   poster.name = 'Póster del proceso'; cutaway.push(poster);
-  const frame = box('Marco póster', [0.035, 1.04, 2.49], [room.right - 0.035, 2.5, CONFIG.stations[0].z + 0.05], colors.wood); cutaway.push(frame);
-  const entryPoster = sign('TU PRÓXIMA IDEA\nEMPIEZA ACÁ\nDiseño + fabricación local', { x: room.left + 0.045, y: 2.08, z: 5.05, width: 1.45, height: 1.15, rotation: Math.PI / 2, background: '#95b59c', color: '#fff9ed', fontSize: 64 });
-  entryPoster.name = 'Póster recepción';
+  const frame = box('Marco póster', [0.035, 0.84, 1.89], [room.right - 0.035, 2.5, 2.5], colors.wood); cutaway.push(frame);
   const entryLabel = sign('ACCESO ÚNICO', { x: -4.7, y: 0.04, z: room.front + 0.5, width: 2, height: 0.3, fontSize: 60 }); entryLabel.rotation.x = -Math.PI / 2;
+  addDecorations({ scene, box, cylinder, sign, material, renderCandidates, cutaway, barrier });
 
   function person(name, position, options, yaw = 0) {
     const character = createCharacter(options); character.name = name; character.position.set(...position); character.rotation.y = yaw; scene.add(character);

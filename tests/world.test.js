@@ -12,10 +12,10 @@ test('entrada única, recepción accesible y espacio justo para el personal', as
   const wall = world.colliders.find(box => box.id === 'Pared izquierda');
   near(desk.minX, wall.maxX);
   assert.ok(reception.width > 3.925 && reception.width < 4.4, 'Apenas más largo que un baño');
-  const bathroom = world.colliders.find(box => box.id === 'BAÑO MUJERES');
-  const clearance = desk.minZ - bathroom.maxZ;
+  const storage = world.colliders.find(box => box.id === 'DEPÓSITO');
+  const clearance = desk.minZ - storage.maxZ;
   assert.ok(clearance >= 1.1 && clearance <= 1.3);
-  assert.ok(reception.staffZ - 0.3 > bathroom.maxZ && reception.staffZ + 0.3 < desk.minZ);
+  assert.ok(reception.staffZ - 0.3 > storage.maxZ && reception.staffZ + 0.3 < desk.minZ);
   for (const x of [-7, -4.7, -2.7, 0, 6]) {
     const end = moveCircle({ x, z: room.front - 0.5 }, { x: 0, z: 2 }, navigation.radius, world.colliders);
     assert.equal(end.z > room.front + 0.3, x === -4.7);
@@ -23,7 +23,7 @@ test('entrada única, recepción accesible y espacio justo para el personal', as
 });
 test('habitaciones continuas hasta el techo, sin huecos entre ellas', async () => {
   const { scene } = await worldFixture();
-  const rooms = ['DEPÓSITO', 'BAÑO HOMBRES', 'BAÑO MUJERES'].map(name => new THREE.Box3().setFromObject(scene.getObjectByName(name)));
+  const rooms = ['BAÑO MUJERES', 'BAÑO HOMBRES', 'DEPÓSITO'].map(name => new THREE.Box3().setFromObject(scene.getObjectByName(name)));
   const ceiling = new THREE.Box3().setFromObject(scene.getObjectByName('Techo'));
   rooms.forEach(room => { near(room.min.y, 0); near(room.max.y, ceiling.min.y); near(room.min.x, CONFIG.room.left); });
   near(rooms[0].max.z, rooms[1].min.z); near(rooms[1].max.z, rooms[2].min.z);
@@ -40,7 +40,7 @@ test('puestos junto a la pared, separación ampliada y armario junto al fondo', 
   assert.ok(CONFIG.stations[0].z - CONFIG.stations[1].z >= 3.5);
   const cabinet = world.colliders.find(box => box.id === 'Armario de filamentos');
   near(cabinet.minZ, CONFIG.room.back + 0.025);
-  assert.ok(cabinet.minX - (-4.075) > 1.5, 'Deja libre la puerta del depósito');
+  assert.ok(cabinet.minX - (-4.075) > 1.5, 'Deja libre la puerta del baño del fondo');
 });
 test('recepción equipada, hoja única de tarifas y sillas libres centradas', async () => {
   const { world, scene } = await worldFixture();

@@ -77,13 +77,15 @@ La búsqueda del filamento respeta los muebles y al jugador. Si se bloquea al t�
 - Acceso único, recepción frontal contra la pared izquierda: mostrador de 4,16 unidades, apenas más largo que el ancho de un baño. Conserva 1,2 unidades detrás para el personal.
 - Recepción sentada en una silla de oficina, computadora orientada al personal, teclado, mouse, una hoja con las tres modalidades y portalapiceras.
 - Tres estaciones contra la pared derecha, la última junto al fondo. Separación mayor entre puestos y menos espacio vacío hacia la vidriera.
-- Depósito y dos baños continuos, del piso al techo, con juntas oscuras que marcan sus divisiones. Interiores fuera del recorrido.
-- Armario de vidrio contra el fondo, entre depósito y E3, con espacio junto a la puerta del depósito.
+- Habitaciones continuas del piso al techo: desde el fondo hacia recepción, baño de mujeres, baño de hombres y depósito. Juntas y cornisas en tono madera separan los ambientes y marcan la unión con el techo. Interiores fuera del recorrido.
+- Puertas con pictogramas de mujer, hombre y caja; se retiró la leyenda “Individual”.
+- Armario de vidrio contra el fondo, entre el baño de mujeres y E3, con espacio libre junto a la puerta.
 - Sillas de oficina con brazos, columna, base de cinco radios y ruedas. Las libres de E1/E3 están centradas entre PC e impresora y permiten sentarse; no se empujan ni arrastran.
 - Una persona trabaja sentada en E2. Es parte del caso ilustrativo, no una medición de ocupación.
 - El técnico recorre puntos de paso mientras no está solicitado. Al llamarlo va a E1 por el pasillo, respeta colisiones y se queda hasta terminar el trabajo.
 - Seis figuras en la vidriera, logo elevado y tarifario de alto contraste en la pared derecha **entre E2 y E3**, fuera del ancho de sus impresoras.
-- Póster del proceso, póster de recepción, plantas y detalles de madera en mostrador y estaciones.
+- Panel de marca detrás de recepción, sobre listones de madera, con ilustración de impresora y composición en tonos cálidos. Cuadros ilustrados en el pasillo y los puestos, póster del proceso y de recepción, estantes con libros/modelos, plantas de mesa y una planta alta junto a la vidriera. Detalles de madera, apuntes y lápices en las mesas.
+- Piso de madera mate con vetas y juntas escalonadas, alfombra de entrada y alfombra larga en el pasillo. Las alfombras quedan por debajo de los indicadores del recorrido.
 - Paleta de marfil, madera clara, arcilla suave y salvia. Geometrías simples y carteles/pantallas generados localmente.
 
 Las proporciones son unidades visuales para la demo, no medidas arquitectónicas reales. El plano original es conceptual; esta revisión incorpora los cambios de distribución solicitados por el grupo.
@@ -113,7 +115,7 @@ Por pedido del grupo, esos avisos se conservan en la documentación técnica y n
 
 Se consultaron los ejemplos de la materia, incluido 6.2 de rendimiento. La escena reutiliza materiales y geometrías, agrupa mobiliario estático con `InstancedMesh`, calcula sus colisiones una vez y mantiene animaciones por tiempo transcurrido. El mobiliario agrupado conserva objetos lógicos para límites y pruebas.
 
-`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. Las juntas del piso se dibujan en un único grupo de líneas. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
+`CONFIG.graphics` en `src/config.js` limita la resolución a 1,25 píxeles por píxel CSS y deja las sombras dinámicas desactivadas. Los monitores usan texturas locales de 640×400: E1 se actualiza como máximo a 8 Hz y los otros a 2 Hz. La madera del piso usa una textura repetida de 512×512 y las alfombras, texturas de 256×128, generadas una sola vez en canvas. Ninguna de estas optimizaciones cambia los datos del caso ni las colisiones.
 
 Con **F2** se pueden comparar FPS y costo de dibujo en la computadora de grabación. Todavía hay que comprobar el rendimiento real con el grabador abierto; las pruebas de Node no miden la GPU ni garantizan FPS.
 
@@ -122,6 +124,7 @@ Con **F2** se pueden comparar FPS y costo de dibujo en la computadora de grabaci
 ```text
 src/config.js             Distribución, colores, navegación y calidad gráfica
 src/world.js              Local, muebles, recepción, tarifas y personajes
+src/decorations.js        Cuadros, estantes, plantas y pictogramas de puertas
 src/character.js          Personas con primitivas; variante sentada
 src/navigation.js         WASD, captura del mouse y sentarse/levantarse
 src/look.js               Filtro de mirada contra giros bruscos
@@ -144,7 +147,7 @@ npm test
 
 Las pruebas cubren ambos recorridos completos, confirmación antes de imprimir, dos piezas, ensamblado, repetición sin acumulación, técnico y colisiones, sentarse/levantarse, acceso y disposición del mobiliario. La prueba del coordinador usa cámara y grafo reales con un renderizador simulado; no reemplaza una revisión visual en el navegador.
 
-Ver [estado de la iteración actual](docs/estado-hito-5.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
+Ver [estado de la iteración actual](docs/estado-hito-6.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
 ## GitHub y próximos pasos
 
@@ -155,7 +158,7 @@ git add .
 git commit -m "Describe el cambio"
 ```
 
-Esta iteración se guarda con commit local. **El push queda pendiente del okey final del grupo.** Cuando esté aprobado, `git push` publica los commits en el repositorio.
+El grupo autorizó subir el recorrido autónomo y los ajustes de decoración/distribución al completarlos. Para publicar commits locales aprobados, ejecutar `git push`.
 
 El material docente en `.reference/` y los ZIP están excluidos de Git. Subir el código al repositorio no publica automáticamente una web; la aplicación se ejecuta con Live Server.
 

@@ -29,5 +29,6 @@ export const CONFIG = {
     blue: 0xbd8b73,
     peach: 0xe4b573,
     wood: 0xcfaa83,
+    trim: 0xb18b67,
   },
 };
