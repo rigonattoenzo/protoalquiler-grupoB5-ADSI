@@ -170,7 +170,7 @@ Las pruebas cubren los tres recorridos completos, confirmación antes de imprimi
 
 Ver [estado de la iteración actual](docs/estado-hito-10.md), [material consultado](docs/material-de-referencia.md) y [licencia de Three.js](vendor/three/README.md).
 
-## GitHub y próximos pasos
+## GitHub
 
 Repositorio: [rigonattoenzo/protoalquiler-grupoB5-ADSI](https://github.com/rigonattoenzo/protoalquiler-grupoB5-ADSI). La rama de trabajo es `main`. Para guardar cambios locales:
 
@@ -178,9 +178,3 @@ Repositorio: [rigonattoenzo/protoalquiler-grupoB5-ADSI](https://github.com/rigon
 git add .
 git commit -m "Describe el cambio"
 ```
-
-El usuario confirmó la última animación y autorizó subir todos los commits pendientes del encargo y sus refinamientos. Para publicar commits locales aprobados, ejecutar `git push`.
-
-El material docente en `.reference/` y los ZIP están excluidos de Git. Subir el código al repositorio no publica automáticamente una web; la aplicación se ejecuta con Live Server.
-
-Próximos pasos: validar las tomas de las tres modalidades con el grupo, refinar encuadres y agregar cámaras preparadas para grabación si hacen falta. No se requiere CAD real, backend, cuentas, reservas, inventario comercial ni pagos.
